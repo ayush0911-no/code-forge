@@ -1,82 +1,48 @@
 "use client";
 
-import { useState, useEffect, useCallback, useMemo } from 'react';
-import { codeAutoCompletion } from '@/ai/flows/code-auto-completion';
-import { detectAndHighlightErrors } from '@/ai/flows/error-detection-and-highlighting';
+import { useState, useCallback, useMemo } from 'react';
+import { runCode } from '@/ai/flows/run-code';
 import { languages, type Language } from '@/lib/languages';
 import { useToast } from "@/hooks/use-toast"
 import { Button } from "@/components/ui/button";
 import { Card, CardContent, CardDescription, CardHeader, CardTitle } from "@/components/ui/card";
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from "@/components/ui/select";
 import { Textarea } from "@/components/ui/textarea";
-import { Alert, AlertDescription, AlertTitle } from "@/components/ui/alert";
-import { Accordion, AccordionContent, AccordionItem, AccordionTrigger } from "@/components/ui/accordion";
-import { Skeleton } from "@/components/ui/skeleton";
 import { Label } from "@/components/ui/label";
-import { Hammer, Download, Trash2, LoaderCircle, AlertCircle } from "lucide-react";
+import { Hammer, Download, Trash2, LoaderCircle, Play } from "lucide-react";
 
 export function CodeEditor() {
   const [code, setCode] = useState('');
   const [language, setLanguage] = useState(languages[0].value);
-  const [highlightedCode, setHighlightedCode] = useState('');
-  const [errors, setErrors] = useState<string[]>([]);
-  const [suggestions, setSuggestions] = useState<string[]>([]);
+  const [output, setOutput] = useState('');
   const [isLoading, setIsLoading] = useState(false);
   const { toast } = useToast();
 
   const selectedLanguage = useMemo(() => languages.find(l => l.value === language) || languages[0], [language]);
 
-  useEffect(() => {
-    const processCode = async () => {
-      if (code.trim() === '') {
-        setHighlightedCode('');
-        setErrors([]);
-        setSuggestions([]);
-        return;
-      }
-      setIsLoading(true);
-      try {
-        const [errorResult, completionResult] = await Promise.allSettled([
-          detectAndHighlightErrors({ code, language }),
-          codeAutoCompletion({ codeSnippet: code, language }),
-        ]);
-
-        if (errorResult.status === 'fulfilled' && errorResult.value) {
-          setHighlightedCode(errorResult.value.highlightedCode);
-          setErrors(errorResult.value.errors);
-        } else {
-          setHighlightedCode(`<span class="text-destructive">${(errorResult as PromiseRejectedResult).reason?.message || 'Error highlighting code.'}</span>`);
-          setErrors([]);
-        }
-
-        if (completionResult.status === 'fulfilled' && completionResult.value) {
-          setSuggestions(completionResult.value.completionSuggestions);
-        } else {
-          setSuggestions([]);
-        }
-
-      } catch (error) {
-        console.error("AI processing failed:", error);
-        toast({
-          variant: "destructive",
-          title: "AI Error",
-          description: "Could not process code. Please try again later.",
-        });
-        setHighlightedCode(`<span class="text-destructive">An unexpected error occurred.</span>`);
-      } finally {
-        setIsLoading(false);
-      }
-    };
-
-    const handler = setTimeout(() => {
-      processCode();
-    }, 1000);
-
-    return () => {
-      clearTimeout(handler);
-    };
-  }, [code, language, toast]);
-
+  const handleRunCode = async () => {
+    if (code.trim() === '') {
+      setOutput('');
+      return;
+    }
+    setIsLoading(true);
+    try {
+      const result = await runCode({ code, language });
+      setOutput(result.output);
+    } catch (error) {
+      console.error("Code execution failed:", error);
+      const errorMessage = error instanceof Error ? error.message : "An unexpected error occurred.";
+      toast({
+        variant: "destructive",
+        title: "Execution Error",
+        description: `Could not run code. ${errorMessage}`,
+      });
+      setOutput(`Error: ${errorMessage}`);
+    } finally {
+      setIsLoading(false);
+    }
+  };
+  
   const handleDownload = useCallback(() => {
     const blob = new Blob([code], { type: 'text/plain' });
     const url = URL.createObjectURL(blob);
@@ -91,14 +57,7 @@ export function CodeEditor() {
 
   const handleClear = () => {
     setCode('');
-    setHighlightedCode('');
-    setErrors([]);
-    setSuggestions([]);
-  };
-
-  const insertSuggestion = (suggestion: string) => {
-    // A more robust implementation would handle cursor position
-    setCode(prev => prev + suggestion);
+    setOutput('');
   };
 
   return (
@@ -145,72 +104,31 @@ export function CodeEditor() {
             />
           </div>
           <div className="space-y-2">
-            <Label htmlFor="code-output" className="text-sm font-semibold">AI Analysis</Label>
+            <Label htmlFor="code-output" className="text-sm font-semibold">Output</Label>
             <div id="code-output" className="relative h-[500px] w-full overflow-auto rounded-lg border bg-secondary/30 p-4 font-code text-sm">
               {isLoading && (
                 <div className="absolute inset-0 z-10 flex flex-col items-center justify-center bg-background/80 backdrop-blur-sm">
                   <LoaderCircle className="h-8 w-8 animate-spin text-primary" />
-                  <p className="mt-2 text-sm text-muted-foreground">Analyzing code...</p>
+                  <p className="mt-2 text-sm text-muted-foreground">Running code...</p>
                 </div>
               )}
-              {highlightedCode ? (
-                <pre><code dangerouslySetInnerHTML={{ __html: highlightedCode }} /></pre>
+              {output ? (
+                <pre><code className={output.startsWith('Error:') ? 'text-destructive' : ''}>{output}</code></pre>
               ) : (
                 <div className="flex h-full items-center justify-center text-muted-foreground">
-                  Code analysis will appear here.
+                  Code output will appear here.
                 </div>
               )}
             </div>
           </div>
         </div>
         
-        <Accordion type="multiple" className="w-full" defaultValue={['errors', 'suggestions']}>
-          <AccordionItem value="errors">
-            <AccordionTrigger className="text-base font-semibold">
-              <div className="flex items-center gap-2">
-                <AlertCircle className="h-5 w-5 text-destructive" />
-                Detected Errors
-                {errors.length > 0 && <span className="flex h-6 w-6 items-center justify-center rounded-full bg-destructive text-destructive-foreground text-xs font-bold">{errors.length}</span>}
-              </div>
-            </AccordionTrigger>
-            <AccordionContent>
-              {errors.length > 0 ? (
-                <div className="space-y-2 pr-2">
-                  {errors.map((error, index) => (
-                    <Alert key={index} variant="destructive">
-                      <AlertCircle className="h-4 w-4" />
-                      <AlertTitle>Error</AlertTitle>
-                      <AlertDescription>{error}</AlertDescription>
-                    </Alert>
-                  ))}
-                </div>
-              ) : (
-                <p className="text-sm text-muted-foreground">No errors detected.</p>
-              )}
-            </AccordionContent>
-          </AccordionItem>
-
-          <AccordionItem value="suggestions">
-            <AccordionTrigger className="text-base font-semibold">
-              <div className="flex items-center gap-2">
-                Auto-Completion Suggestions
-              </div>
-            </AccordionTrigger>
-            <AccordionContent>
-              {suggestions.length > 0 ? (
-                <div className="flex flex-wrap gap-2">
-                  {suggestions.map((suggestion, index) => (
-                    <Button key={index} variant="outline" size="sm" onClick={() => insertSuggestion(suggestion)} className="bg-accent/50 hover:bg-accent text-accent-foreground">
-                      {suggestion}
-                    </Button>
-                  ))}
-                </div>
-              ) : (
-                <p className="text-sm text-muted-foreground">No suggestions available. Keep typing for suggestions.</p>
-              )}
-            </AccordionContent>
-          </AccordionItem>
-        </Accordion>
+        <div className="flex justify-end">
+            <Button onClick={handleRunCode} disabled={isLoading}>
+              <Play className="mr-2 h-4 w-4" />
+              Run Code
+            </Button>
+        </div>
       </CardContent>
     </Card>
   );

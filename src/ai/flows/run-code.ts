@@ -13,7 +13,6 @@ import {z} from 'genkit';
 const RunCodeInputSchema = z.object({
   code: z.string().describe('The code to run.'),
   language: z.string().describe('The programming language of the code.'),
-  stdin: z.string().optional().describe('The standard input to provide to the code.'),
 });
 export type RunCodeInput = z.infer<typeof RunCodeInputSchema>;
 
@@ -32,12 +31,6 @@ const prompt = ai.definePrompt({
   output: {schema: RunCodeOutputSchema},
   prompt: `You are a code execution engine. Given the following code and language, execute it and return the output.
 If the code has syntax errors or would cause a runtime error, return an error message as the output.
-{{#if stdin}}
-The code will be provided with the following standard input:
-\`\`\`
-{{{stdin}}}
-\`\`\`
-{{/if}}
 
 Language: {{{language}}}
 Code:

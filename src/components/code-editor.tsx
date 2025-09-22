@@ -15,7 +15,6 @@ export function CodeEditor() {
   const [code, setCode] = useState('');
   const [language, setLanguage] = useState(languages[0].value);
   const [output, setOutput] = useState('');
-  const [stdin, setStdin] = useState('');
   const [isLoading, setIsLoading] = useState(false);
   const { toast } = useToast();
 
@@ -28,7 +27,7 @@ export function CodeEditor() {
     }
     setIsLoading(true);
     try {
-      const result = await runCode({ code, language, stdin });
+      const result = await runCode({ code, language });
       setOutput(result.output);
     } catch (error) {
       console.error("Code execution failed:", error);
@@ -59,7 +58,6 @@ export function CodeEditor() {
   const handleClear = () => {
     setCode('');
     setOutput('');
-    setStdin('');
   };
 
   return (
@@ -107,16 +105,6 @@ export function CodeEditor() {
               value={code}
               onChange={(e) => setCode(e.target.value)}
               className="min-h-[150px] font-code text-sm resize-y"
-            />
-          </div>
-          <div className="space-y-2">
-            <Label htmlFor="stdin-input" className="text-sm font-semibold">Input (stdin)</Label>
-            <Textarea
-              id="stdin-input"
-              placeholder="Enter input for your code here..."
-              value={stdin}
-              onChange={(e) => setStdin(e.target.value)}
-              className="h-[100px] font-code text-sm resize-y"
             />
           </div>
         </div>

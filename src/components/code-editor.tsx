@@ -88,6 +88,10 @@ export function CodeEditor() {
             <Button variant="destructive" size="icon" onClick={handleClear} aria-label="Clear editor">
               <Trash2 className="h-4 w-4" />
             </Button>
+            <Button onClick={handleRunCode} disabled={isLoading}>
+              <Play className="mr-2 h-4 w-4" />
+              Run Code
+            </Button>
           </div>
         </div>
       </CardHeader>
@@ -100,12 +104,12 @@ export function CodeEditor() {
               placeholder={`// Start writing your ${selectedLanguage.label} code here...`}
               value={code}
               onChange={(e) => setCode(e.target.value)}
-              className="h-[500px] font-code text-sm resize-none"
+              className="h-[400px] font-code text-sm resize-none"
             />
           </div>
           <div className="space-y-2">
             <Label htmlFor="code-output" className="text-sm font-semibold">Output</Label>
-            <div id="code-output" className="relative h-[500px] w-full overflow-auto rounded-lg border bg-secondary/30 p-4 font-code text-sm">
+            <div id="code-output" className="relative h-[400px] w-full overflow-auto rounded-lg border bg-secondary/30 p-4 font-code text-sm">
               {isLoading && (
                 <div className="absolute inset-0 z-10 flex flex-col items-center justify-center bg-background/80 backdrop-blur-sm">
                   <LoaderCircle className="h-8 w-8 animate-spin text-primary" />
@@ -121,13 +125,6 @@ export function CodeEditor() {
               )}
             </div>
           </div>
-        </div>
-        
-        <div className="flex justify-end">
-            <Button onClick={handleRunCode} disabled={isLoading}>
-              <Play className="mr-2 h-4 w-4" />
-              Run Code
-            </Button>
         </div>
       </CardContent>
     </Card>

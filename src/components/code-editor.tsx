@@ -103,12 +103,12 @@ export function CodeEditor() {
             placeholder={`// Start writing your ${selectedLanguage.label} code here...`}
             value={code}
             onChange={(e) => setCode(e.target.value)}
-            className="h-[400px] font-code text-sm resize-y"
+            className="min-h-[250px] font-code text-sm resize-y"
           />
         </div>
         <div className="space-y-2">
           <Label htmlFor="code-output" className="text-sm font-semibold">Output</Label>
-          <div id="code-output" className="relative h-[400px] w-full overflow-auto rounded-lg border bg-secondary/30 p-4 font-code text-sm">
+          <div id="code-output" className="relative min-h-[250px] h-full w-full overflow-auto rounded-lg border bg-secondary/30 p-4 font-code text-sm">
             {isLoading && (
               <div className="absolute inset-0 z-10 flex flex-col items-center justify-center bg-background/80 backdrop-blur-sm">
                 <LoaderCircle className="h-8 w-8 animate-spin text-primary" />

@@ -61,7 +61,7 @@ export function CodeEditor() {
   };
 
   return (
-    <Card className="w-full max-w-7xl shadow-2xl">
+    <Card className="w-full max-w-4xl shadow-2xl">
       <CardHeader>
         <div className="flex flex-col sm:flex-row justify-between items-start sm:items-center gap-4">
           <div className="flex items-center gap-3">
@@ -95,35 +95,33 @@ export function CodeEditor() {
           </div>
         </div>
       </CardHeader>
-      <CardContent className="space-y-6">
-        <div className="grid grid-cols-1 lg:grid-cols-2 gap-6">
-          <div className="space-y-2">
-            <Label htmlFor="code-input" className="text-sm font-semibold">Your Code</Label>
-            <Textarea
-              id="code-input"
-              placeholder={`// Start writing your ${selectedLanguage.label} code here...`}
-              value={code}
-              onChange={(e) => setCode(e.target.value)}
-              className="h-[400px] font-code text-sm resize-none"
-            />
-          </div>
-          <div className="space-y-2">
-            <Label htmlFor="code-output" className="text-sm font-semibold">Output</Label>
-            <div id="code-output" className="relative h-[400px] w-full overflow-auto rounded-lg border bg-secondary/30 p-4 font-code text-sm">
-              {isLoading && (
-                <div className="absolute inset-0 z-10 flex flex-col items-center justify-center bg-background/80 backdrop-blur-sm">
-                  <LoaderCircle className="h-8 w-8 animate-spin text-primary" />
-                  <p className="mt-2 text-sm text-muted-foreground">Running code...</p>
-                </div>
-              )}
-              {output ? (
-                <pre className="whitespace-pre-wrap"><code className={output.startsWith('Error:') ? 'text-destructive' : ''}>{output}</code></pre>
-              ) : (
-                <div className="flex h-full items-center justify-center text-muted-foreground">
-                  Code output will appear here.
-                </div>
-              )}
-            </div>
+      <CardContent className="space-y-4">
+        <div className="space-y-2">
+          <Label htmlFor="code-input" className="text-sm font-semibold">Your Code</Label>
+          <Textarea
+            id="code-input"
+            placeholder={`// Start writing your ${selectedLanguage.label} code here...`}
+            value={code}
+            onChange={(e) => setCode(e.target.value)}
+            className="h-[300px] font-code text-sm resize-y"
+          />
+        </div>
+        <div className="space-y-2">
+          <Label htmlFor="code-output" className="text-sm font-semibold">Output</Label>
+          <div id="code-output" className="relative h-[200px] w-full overflow-auto rounded-lg border bg-secondary/30 p-4 font-code text-sm">
+            {isLoading && (
+              <div className="absolute inset-0 z-10 flex flex-col items-center justify-center bg-background/80 backdrop-blur-sm">
+                <LoaderCircle className="h-8 w-8 animate-spin text-primary" />
+                <p className="mt-2 text-sm text-muted-foreground">Running code...</p>
+              </div>
+            )}
+            {output ? (
+              <pre className="whitespace-pre-wrap"><code className={output.startsWith('Error:') ? 'text-destructive' : ''}>{output}</code></pre>
+            ) : (
+              <div className="flex h-full items-center justify-center text-muted-foreground">
+                Code output will appear here.
+              </div>
+            )}
           </div>
         </div>
       </CardContent>

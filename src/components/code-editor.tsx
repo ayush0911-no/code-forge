@@ -117,7 +117,7 @@ export function CodeEditor() {
                 </div>
               )}
               {output ? (
-                <pre><code className={output.startsWith('Error:') ? 'text-destructive' : ''}>{output}</code></pre>
+                <pre className="whitespace-pre-wrap"><code className={output.startsWith('Error:') ? 'text-destructive' : ''}>{output}</code></pre>
               ) : (
                 <div className="flex h-full items-center justify-center text-muted-foreground">
                   Code output will appear here.

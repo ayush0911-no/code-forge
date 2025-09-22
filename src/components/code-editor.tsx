@@ -15,6 +15,7 @@ export function CodeEditor() {
   const [code, setCode] = useState('');
   const [language, setLanguage] = useState(languages[0].value);
   const [output, setOutput] = useState('');
+  const [stdin, setStdin] = useState('');
   const [isLoading, setIsLoading] = useState(false);
   const { toast } = useToast();
 
@@ -27,7 +28,7 @@ export function CodeEditor() {
     }
     setIsLoading(true);
     try {
-      const result = await runCode({ code, language });
+      const result = await runCode({ code, language, stdin });
       setOutput(result.output);
     } catch (error) {
       console.error("Code execution failed:", error);
@@ -58,6 +59,7 @@ export function CodeEditor() {
   const handleClear = () => {
     setCode('');
     setOutput('');
+    setStdin('');
   };
 
   return (
@@ -96,15 +98,27 @@ export function CodeEditor() {
         </div>
       </CardHeader>
       <CardContent className="grid grid-cols-1 md:grid-cols-2 gap-4">
-        <div className="space-y-2">
-          <Label htmlFor="code-input" className="text-sm font-semibold">Your Code</Label>
-          <Textarea
-            id="code-input"
-            placeholder={`// Start writing your ${selectedLanguage.label} code here...`}
-            value={code}
-            onChange={(e) => setCode(e.target.value)}
-            className="min-h-[250px] font-code text-sm resize-y"
-          />
+        <div className="flex flex-col gap-4">
+          <div className="space-y-2">
+            <Label htmlFor="code-input" className="text-sm font-semibold">Your Code</Label>
+            <Textarea
+              id="code-input"
+              placeholder={`// Start writing your ${selectedLanguage.label} code here...`}
+              value={code}
+              onChange={(e) => setCode(e.target.value)}
+              className="min-h-[150px] font-code text-sm resize-y"
+            />
+          </div>
+          <div className="space-y-2">
+            <Label htmlFor="stdin-input" className="text-sm font-semibold">Input (stdin)</Label>
+            <Textarea
+              id="stdin-input"
+              placeholder="Enter input for your code here..."
+              value={stdin}
+              onChange={(e) => setStdin(e.target.value)}
+              className="h-[100px] font-code text-sm resize-y"
+            />
+          </div>
         </div>
         <div className="space-y-2">
           <Label htmlFor="code-output" className="text-sm font-semibold">Output</Label>

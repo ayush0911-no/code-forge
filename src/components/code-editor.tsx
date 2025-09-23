@@ -11,7 +11,7 @@ import { Dialog, DialogContent, DialogHeader, DialogTitle, DialogFooter, DialogC
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from "@/components/ui/select";
 import { Textarea } from "@/components/ui/textarea";
 import { Label } from "@/components/ui/label";
-import { Code, Download, LoaderCircle, Play, Sparkles, Copy, FileText } from "lucide-react";
+import { Code, Download, LoaderCircle, Play, Sparkles, Copy, FileText, Trash2 } from "lucide-react";
 import { Input } from '@/components/ui/input';
 import { ThemeToggle } from '@/components/theme-toggle';
 
@@ -149,6 +149,12 @@ export function CodeEditor() {
     document.body.removeChild(a);
     URL.revokeObjectURL(url);
   }, [code, selectedLanguage]);
+
+  const handleClearCode = () => {
+    setCode('');
+    setOutput('');
+    setImageOutput('');
+  }
   
   const handleInputSubmit = (e: React.FormEvent<HTMLFormElement>) => {
     e.preventDefault();
@@ -205,6 +211,7 @@ export function CodeEditor() {
           </Select>
           <ThemeToggle />
           <Button variant="outline" size="sm" onClick={handleDownload}><Download className="mr-2" /> Download</Button>
+          <Button variant="outline" size="sm" onClick={handleClearCode}><Trash2 className="mr-2" /> Clear</Button>
           <Button size="sm" onClick={() => handleRunCode()} disabled={isLoading || isGenerating}>
             {isLoading ? <LoaderCircle className="mr-2 h-4 w-4 animate-spin" /> : <Play className="mr-2 h-4 w-4" />}
             Compile & Run

@@ -7,11 +7,11 @@ import { generateCode } from '@/ai/flows/generate-code';
 import { languages, type Language } from '@/lib/languages';
 import { useToast } from "@/hooks/use-toast";
 import { Button } from "@/components/ui/button";
-import { Dialog, DialogContent, DialogHeader, DialogTitle, DialogFooter, DialogClose } from "@/components/ui/dialog";
+import { Dialog, DialogContent, DialogHeader, DialogTitle, DialogFooter, DialogClose, DialogTrigger } from "@/components/ui/dialog";
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from "@/components/ui/select";
 import { Textarea } from "@/components/ui/textarea";
 import { Label } from "@/components/ui/label";
-import { Code, Download, LoaderCircle, Play, Sparkles, Copy, FileText, Video, Wand2 } from "lucide-react";
+import { Code, Download, LoaderCircle, Play, Sparkles, Copy, FileText } from "lucide-react";
 import { Input } from '@/components/ui/input';
 import { ThemeToggle } from '@/components/theme-toggle';
 
@@ -28,7 +28,7 @@ export function CodeEditor() {
   const [generatedContent, setGeneratedContent] = useState('');
   const [isAnswer, setIsAnswer] = useState(false);
   const [imageOutput, setImageOutput] = useState('');
-
+  const [isAiDialogOpen, setIsAiDialogOpen] = useState(false);
 
   const selectedLanguage = useMemo(() => languages.find(l => l.value === language) || languages[0], [language]);
 
@@ -86,6 +86,7 @@ export function CodeEditor() {
     setIsGenerating(true);
     setGeneratedContent('');
     setIsAnswer(false);
+    setIsAiDialogOpen(false);
     try {
       const result = await generateCode({ prompt: aiPrompt, language });
       setGeneratedContent(result.code);
@@ -108,11 +109,13 @@ export function CodeEditor() {
     setCode(generatedContent);
     setGeneratedContent('');
     setIsAnswer(false);
+    setAiPrompt('');
   };
 
   const handleDeclineSuggestion = () => {
     setGeneratedContent('');
     setIsAnswer(false);
+    setAiPrompt('');
   };
 
   const handleCopyAnswer = () => {
@@ -206,6 +209,30 @@ export function CodeEditor() {
             {isLoading ? <LoaderCircle className="mr-2 h-4 w-4 animate-spin" /> : <Play className="mr-2 h-4 w-4" />}
             Compile & Run
           </Button>
+          <Dialog open={isAiDialogOpen} onOpenChange={setIsAiDialogOpen}>
+            <DialogTrigger asChild>
+              <Button>AI Seva</Button>
+            </DialogTrigger>
+            <DialogContent>
+              <DialogHeader>
+                <DialogTitle>AI Assistant</DialogTitle>
+              </DialogHeader>
+                <Label htmlFor="ai-prompt" className="sr-only">AI Assistant</Label>
+                <Input
+                  id="ai-prompt"
+                  placeholder="Ask a question or describe the code to generate..."
+                  value={aiPrompt}
+                  onChange={(e) => setAiPrompt(e.target.value)}
+                  onKeyDown={(e) => e.key === 'Enter' && handleGenerateCode()}
+                />
+              <DialogFooter>
+                <Button onClick={handleGenerateCode} disabled={isGenerating || isLoading}>
+                  {isGenerating ? <LoaderCircle className="mr-2 h-4 w-4 animate-spin" /> : <Sparkles className="mr-2 h-4 w-4" />}
+                  Generate
+                </Button>
+              </DialogFooter>
+            </DialogContent>
+          </Dialog>
         </div>
       </header>
       
@@ -257,27 +284,9 @@ export function CodeEditor() {
             )}
           </div>
         </div>
-        
-        {/* Hidden DevPilot input */}
-        <div>
-          <Label htmlFor="ai-prompt" className="text-sm font-semibold">AI Assistant</Label>
-          <div className="flex gap-2">
-            <Input
-              id="ai-prompt"
-              placeholder="Ask a question or describe the code to generate..."
-              value={aiPrompt}
-              onChange={(e) => setAiPrompt(e.target.value)}
-              onKeyDown={(e) => e.key === 'Enter' && handleGenerateCode()}
-            />
-             <Button onClick={handleGenerateCode} disabled={isGenerating || isLoading}>
-              {isGenerating ? <LoaderCircle className="mr-2 h-4 w-4 animate-spin" /> : <Sparkles className="mr-2 h-4 w-4" />}
-              Generate
-            </Button>
-          </div>
-        </div>
       </main>
 
-      <Dialog open={!!generatedContent} onOpenChange={(isOpen) => !isOpen && setGeneratedContent('')}>
+      <Dialog open={!!generatedContent} onOpenChange={(isOpen) => !isOpen && handleDeclineSuggestion()}>
         <DialogContent className="max-w-2xl">
           <DialogHeader>
             <DialogTitle>{isAnswer ? 'AI Answer' : 'AI Code Suggestion'}</DialogTitle>

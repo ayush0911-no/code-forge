@@ -140,7 +140,7 @@ export function CodeEditor() {
     const url = URL.createObjectURL(blob);
     const a = document.createElement('a');
     a.href = url;
-    a.download = `codejutsu_file.${selectedLanguage.extension}`;
+    a.download = `codeforge_file.${selectedLanguage.extension}`;
     document.body.appendChild(a);
     a.click();
     document.body.removeChild(a);
@@ -187,7 +187,7 @@ export function CodeEditor() {
       <header className="flex h-16 shrink-0 items-center justify-between border-b border-border/60 bg-background px-4 md:px-6">
         <div className="flex items-center gap-3">
           <Code className="h-7 w-7 text-primary" />
-          <h1 className="text-xl font-bold tracking-tighter font-headline">CodeJutsu</h1>
+          <h1 className="text-xl font-bold tracking-tighter font-headline">codeforge</h1>
         </div>
         <div className="flex items-center gap-2 md:gap-4">
           <Select value={language} onValueChange={setLanguage}>
@@ -307,5 +307,3 @@ export function CodeEditor() {
     </>
   );
 }
-
-    

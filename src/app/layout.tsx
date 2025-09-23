@@ -4,7 +4,7 @@ import { ThemeProvider } from '@/components/theme-provider';
 import './globals.css';
 
 export const metadata: Metadata = {
-  title: 'CodeJutsu',
+  title: 'codeforge',
   description: 'A powerful and intuitive code editor for developers, featuring AI-powered error detection and auto-completion.',
 };
 

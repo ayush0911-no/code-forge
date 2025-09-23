@@ -1,15 +1,16 @@
 "use client";
 
 import { useState, useCallback, useMemo } from 'react';
-import { runCode } from '@/ai/flows/run-code';
+import { runCode, RunCodeOutput } from '@/ai/flows/run-code';
 import { languages, type Language } from '@/lib/languages';
-import { useToast } from "@/hooks/use-toast"
+import { useToast } from "@/hooks/use-toast";
 import { Button } from "@/components/ui/button";
 import { Card, CardContent, CardDescription, CardHeader, CardTitle } from "@/components/ui/card";
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from "@/components/ui/select";
 import { Textarea } from "@/components/ui/textarea";
 import { Label } from "@/components/ui/label";
 import { Hammer, Download, Trash2, LoaderCircle, Play } from "lucide-react";
+import { Input } from '@/components/ui/input';
 
 export function CodeEditor() {
   const [code, setCode] = useState('');
@@ -17,18 +18,36 @@ export function CodeEditor() {
   const [output, setOutput] = useState('');
   const [isLoading, setIsLoading] = useState(false);
   const { toast } = useToast();
+  const [userInput, setUserInput] = useState('');
+  const [isAwaitingInput, setIsAwaitingInput] = useState(false);
 
   const selectedLanguage = useMemo(() => languages.find(l => l.value === language) || languages[0], [language]);
 
-  const handleRunCode = async () => {
+  const handleRunCode = useCallback(async (currentInput?: string) => {
     if (code.trim() === '') {
       setOutput('');
       return;
     }
     setIsLoading(true);
+    setIsAwaitingInput(false);
+
     try {
-      const result = await runCode({ code, language });
-      setOutput(result.output);
+      const result: RunCodeOutput = await runCode({
+        code,
+        language,
+        input: currentInput,
+      });
+
+      let newOutput = result.output;
+      if (currentInput !== undefined) {
+        newOutput = `${output}\n${newOutput}`;
+      }
+
+      setOutput(newOutput);
+
+      if (result.requiresInput) {
+        setIsAwaitingInput(true);
+      }
     } catch (error) {
       console.error("Code execution failed:", error);
       const errorMessage = error instanceof Error ? error.message : "An unexpected error occurred.";
@@ -37,12 +56,14 @@ export function CodeEditor() {
         title: "Execution Error",
         description: `Could not run code. ${errorMessage}`,
       });
-      setOutput(`Error: ${errorMessage}`);
+      setOutput(prev => `${prev}\nError: ${errorMessage}`);
     } finally {
       setIsLoading(false);
+      setUserInput('');
     }
-  };
-  
+  }, [code, language, toast, output]);
+
+
   const handleDownload = useCallback(() => {
     const blob = new Blob([code], { type: 'text/plain' });
     const url = URL.createObjectURL(blob);
@@ -58,6 +79,15 @@ export function CodeEditor() {
   const handleClear = () => {
     setCode('');
     setOutput('');
+    setUserInput('');
+    setIsAwaitingInput(false);
+  };
+  
+  const handleInputSubmit = (e: React.FormEvent<HTMLFormElement>) => {
+    e.preventDefault();
+    if(isAwaitingInput){
+        handleRunCode(userInput);
+    }
   };
 
   return (
@@ -88,7 +118,7 @@ export function CodeEditor() {
             <Button variant="destructive" size="icon" onClick={handleClear} aria-label="Clear editor">
               <Trash2 className="h-4 w-4" />
             </Button>
-            <Button onClick={handleRunCode} disabled={isLoading}>
+            <Button onClick={() => handleRunCode()} disabled={isLoading}>
               <Play className="mr-2 h-4 w-4" />
               Run Code
             </Button>
@@ -97,16 +127,16 @@ export function CodeEditor() {
       </CardHeader>
       <CardContent className="grid grid-cols-1 md:grid-cols-2 gap-4">
         <div className="flex flex-col gap-4">
-          <div className="space-y-2">
-            <Label htmlFor="code-input" className="text-sm font-semibold">Your Code</Label>
-            <Textarea
-              id="code-input"
-              placeholder={`// Start writing your ${selectedLanguage.label} code here...`}
-              value={code}
-              onChange={(e) => setCode(e.target.value)}
-              className="min-h-[150px] font-code text-sm resize-y"
-            />
-          </div>
+            <div className="space-y-2">
+                <Label htmlFor="code-input" className="text-sm font-semibold">Your Code</Label>
+                <Textarea
+                    id="code-input"
+                    placeholder={`// Start writing your ${selectedLanguage.label} code here...`}
+                    value={code}
+                    onChange={(e) => setCode(e.target.value)}
+                    className="min-h-[150px] font-code text-sm resize-y h-full"
+                />
+            </div>
         </div>
         <div className="space-y-2">
           <Label htmlFor="code-output" className="text-sm font-semibold">Output</Label>
@@ -117,9 +147,24 @@ export function CodeEditor() {
                 <p className="mt-2 text-sm text-muted-foreground">Running code...</p>
               </div>
             )}
-            {output ? (
-              <pre className="whitespace-pre-wrap break-words"><code className={output.startsWith('Error:') ? 'text-destructive' : ''}>{output}</code></pre>
-            ) : (
+            
+            <pre className="whitespace-pre-wrap break-words"><code className={output.includes('Error:') ? 'text-destructive' : ''}>{output}</code></pre>
+            
+            {isAwaitingInput && (
+              <form onSubmit={handleInputSubmit} className="mt-2 flex items-center gap-2">
+                <Input
+                  type="text"
+                  value={userInput}
+                  onChange={(e) => setUserInput(e.target.value)}
+                  placeholder="Enter input and press Enter"
+                  className="flex-grow bg-background/70"
+                  autoFocus
+                />
+                 <Button type="submit" size="sm" disabled={isLoading}>Submit</Button>
+              </form>
+            )}
+
+            {!isLoading && !output && !isAwaitingInput && (
               <div className="flex h-full items-center justify-center text-muted-foreground">
                 Code output will appear here.
               </div>

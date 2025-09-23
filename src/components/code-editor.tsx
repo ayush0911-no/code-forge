@@ -1,6 +1,6 @@
 "use client";
 
-import { useState, useCallback, useMemo } from 'react';
+import { useState, useCallback, useMemo, useRef, useEffect } from 'react';
 import Image from 'next/image';
 import { runCode, RunCodeOutput } from '@/ai/flows/run-code';
 import { generateCode } from '@/ai/flows/generate-code';
@@ -29,7 +29,21 @@ export function CodeEditor() {
   const [isAnswer, setIsAnswer] = useState(false);
   const [imageOutput, setImageOutput] = useState('');
   const [isAiDialogOpen, setIsAiDialogOpen] = useState(false);
+  const [lineCount, setLineCount] = useState(1);
+  const textareaRef = useRef<HTMLTextAreaElement>(null);
+  const lineNumbersRef = useRef<HTMLDivElement>(null);
 
+  useEffect(() => {
+    const lines = code.split('\n').length;
+    setLineCount(lines);
+  }, [code]);
+
+  const handleTextareaScroll = () => {
+    if (lineNumbersRef.current && textareaRef.current) {
+      lineNumbersRef.current.scrollTop = textareaRef.current.scrollTop;
+    }
+  };
+  
   const selectedLanguage = useMemo(() => languages.find(l => l.value === language) || languages[0], [language]);
 
   const handleRunCode = useCallback(async () => {
@@ -89,9 +103,19 @@ export function CodeEditor() {
     setIsAiDialogOpen(false);
     try {
       const result = await generateCode({ prompt: aiPrompt, language });
-      setGeneratedContent(result.code);
-      const isCode = /^\s*```/.test(result.code) || /^\s*import/.test(result.code) || /^\s*(class|def|for|while|if)\s/.test(result.code) || result.code.includes('public static void main');
-      setIsAnswer(!isCode);
+      
+      const isCodeResponse = result.code.includes('def ') || result.code.includes('class ') || result.code.includes('import ') || result.code.includes('public static void main');
+
+      if (isCodeResponse) {
+        // It's code, so no special formatting needed for the string itself
+        setGeneratedContent(result.code);
+        setIsAnswer(false);
+      } else {
+        // It's an answer, preserve whitespace
+        setGeneratedContent(result.code);
+        setIsAnswer(true);
+      }
+
     } catch (error) {
       console.error("Code generation failed:", error);
       const errorMessage = error instanceof Error ? error.message : "An unexpected error occurred.";
@@ -142,7 +166,7 @@ export function CodeEditor() {
     const blob = new Blob([code], { type: 'text/plain' });
     const url = URL.createObjectURL(blob);
     const a = document.createElement('a');
-    a.href = url;
+a.href = url;
     a.download = `codeforge_file.${selectedLanguage.extension}`;
     document.body.appendChild(a);
     a.click();
@@ -246,13 +270,20 @@ export function CodeEditor() {
       <main className="flex-1 flex flex-col p-4 md:p-6 gap-6">
         <div className="flex flex-col gap-2 flex-grow-[2] basis-0">
           <h2 className="text-lg font-semibold tracking-tight">Code Editor</h2>
-          <div className="flex-grow relative">
+          <div className="flex-grow relative border border-border/60 rounded-lg overflow-hidden">
+            <div ref={lineNumbersRef} className="absolute left-0 top-0 h-full overflow-hidden bg-zinc-900/50 dark:bg-zinc-900/80 text-right pr-2 pt-2 select-none text-muted-foreground font-code text-sm" style={{ width: '40px' }}>
+              {Array.from({ length: lineCount }, (_, i) => i + 1).map(i => <div key={i}>{i}</div>)}
+            </div>
             <Textarea
+              ref={textareaRef}
               id="code-input"
               placeholder={`# Start writing your ${selectedLanguage.label} code here...`}
               value={code}
               onChange={(e) => setCode(e.target.value)}
-              className="absolute inset-0 w-full h-full font-code text-sm resize-none bg-zinc-900/50 dark:bg-zinc-900/80 border-border/60"
+              onScroll={handleTextareaScroll}
+              className="absolute inset-0 w-full h-full font-code text-sm resize-none bg-transparent border-0 focus-visible:ring-0 focus-visible:ring-offset-0"
+              style={{ paddingLeft: '50px' }}
+              spellCheck="false"
             />
           </div>
         </div>
@@ -322,3 +353,5 @@ export function CodeEditor() {
     </>
   );
 }
+
+    

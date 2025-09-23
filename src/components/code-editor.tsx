@@ -260,7 +260,7 @@ export function CodeEditor() {
         </div>
         
         {/* Hidden DevPilot input */}
-        <div className="hidden">
+        <div>
           <Label htmlFor="ai-prompt" className="text-sm font-semibold">AI Assistant</Label>
           <div className="flex gap-2">
             <Input

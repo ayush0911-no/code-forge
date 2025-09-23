@@ -4,7 +4,7 @@ import { ThemeProvider } from '@/components/theme-provider';
 import './globals.css';
 
 export const metadata: Metadata = {
-  title: 'CodeForge',
+  title: 'CodeJutsu',
   description: 'A powerful and intuitive code editor for developers, featuring AI-powered error detection and auto-completion.',
 };
 
@@ -23,7 +23,7 @@ export default function RootLayout({
       <body className="font-body antialiased">
         <ThemeProvider
             attribute="class"
-            defaultTheme="system"
+            defaultTheme="dark"
             enableSystem
             disableTransitionOnChange
         >

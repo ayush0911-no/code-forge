@@ -201,7 +201,6 @@ export function CodeEditor() {
             </SelectContent>
           </Select>
           <ThemeToggle />
-          <Button variant="outline" size="sm"><Video className="mr-2" /> Start Video Call</Button>
           <Button variant="outline" size="sm" onClick={handleGenerateCode}><Wand2 className="mr-2" /> DevPilot</Button>
           <Button variant="outline" size="sm" onClick={handleDownload}><Download className="mr-2" /> Download</Button>
           <Button size="sm" onClick={() => handleRunCode()} disabled={isLoading || isGenerating}>
@@ -308,3 +307,5 @@ export function CodeEditor() {
     </>
   );
 }
+
+    

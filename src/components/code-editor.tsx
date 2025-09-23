@@ -29,13 +29,14 @@ export function CodeEditor() {
 
   const selectedLanguage = useMemo(() => languages.find(l => l.value === language) || languages[0], [language]);
 
-  const handleRunCode = useCallback(async (currentInput?: string) => {
+  const handleRunCode = useCallback(async () => {
     if (code.trim() === '') {
       setOutput('');
       return;
     }
     setIsLoading(true);
     setIsAwaitingInput(false);
+    setOutput(''); // Clear previous output before new run
 
     try {
       const result: RunCodeOutput = await runCode({
@@ -44,9 +45,6 @@ export function CodeEditor() {
       });
 
       let newOutput = result.output;
-      if (currentInput !== undefined) {
-        newOutput = `${output}\n${newOutput}`;
-      }
 
       const requiresInput = newOutput.includes("input()");
       if (requiresInput) {
@@ -72,7 +70,7 @@ export function CodeEditor() {
         setUserInput('');
       }
     }
-  }, [code, language, toast, output, isAwaitingInput]);
+  }, [code, language, toast]);
 
   const handleGenerateCode = async () => {
     if (aiPrompt.trim() === '') return;

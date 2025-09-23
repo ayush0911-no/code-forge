@@ -40,6 +40,7 @@ Follow these instructions carefully:
 4.  When generating code, ensure it is in the specified language.
 5.  Ensure any generated code is syntactically correct and follows best practices.
 6.  When generating code, the output should contain ONLY the raw code. Do not include any explanations, comments, or markdown formatting like \`\`\`language ... \`\`\`.
+7.  **Crucially, ensure all code is properly formatted with correct indentation and newlines. The output must not be a single line of code.**
 
 Language: {{{language}}}
 User Request: {{{prompt}}}

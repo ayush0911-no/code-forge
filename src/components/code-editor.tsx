@@ -1,6 +1,7 @@
 "use client";
 
 import { useState, useCallback, useMemo } from 'react';
+import Image from 'next/image';
 import { runCode, RunCodeOutput } from '@/ai/flows/run-code';
 import { generateCode } from '@/ai/flows/generate-code';
 import { languages, type Language } from '@/lib/languages';
@@ -26,17 +27,21 @@ export function CodeEditor() {
   const [isAwaitingInput, setIsAwaitingInput] = useState(false);
   const [aiPrompt, setAiPrompt] = useState('');
   const [generatedCodeSuggestion, setGeneratedCodeSuggestion] = useState('');
+  const [imageOutput, setImageOutput] = useState('');
+
 
   const selectedLanguage = useMemo(() => languages.find(l => l.value === language) || languages[0], [language]);
 
   const handleRunCode = useCallback(async () => {
     if (code.trim() === '') {
       setOutput('');
+      setImageOutput('');
       return;
     }
     setIsLoading(true);
     setIsAwaitingInput(false);
     setOutput(''); // Clear previous output before new run
+    setImageOutput('');
 
     try {
       const result: RunCodeOutput = await runCode({
@@ -44,6 +49,10 @@ export function CodeEditor() {
         language,
       });
 
+      if (result.image) {
+        setImageOutput(result.image);
+      }
+      
       let newOutput = result.output;
 
       const requiresInput = newOutput.includes("input()");
@@ -116,6 +125,7 @@ export function CodeEditor() {
   const handleClear = () => {
     setCode('');
     setOutput('');
+    setImageOutput('');
     setUserInput('');
     setIsAwaitingInput(false);
   };
@@ -135,7 +145,10 @@ export function CodeEditor() {
         code: fullCode,
         language,
       });
-      setOutput(prev => `${prev}${userInput}\n${result.output}`);
+      if(result.image) {
+        setImageOutput(result.image);
+      }
+      setOutput(prev => `${prev}${userInput}\n${result.output}\n`);
     } catch (error) {
        console.error("Code execution failed:", error);
       const errorMessage = error instanceof Error ? error.message : "An unexpected error occurred.";
@@ -228,6 +241,7 @@ export function CodeEditor() {
                 </div>
               ): null}
               
+              {imageOutput && <Image src={imageOutput} alt="Generated plot" width={400} height={300} />}
               <pre className="whitespace-pre-wrap break-words"><code className={output.includes('Error:') ? 'text-destructive' : ''}>{output}</code></pre>
               
               {isAwaitingInput && (
@@ -244,7 +258,7 @@ export function CodeEditor() {
                 </form>
               )}
 
-              {!isLoading && !output && !isAwaitingInput && (
+              {!isLoading && !output && !isAwaitingInput && !imageOutput && (
                 <div className="flex h-full items-center justify-center text-muted-foreground">
                   Code output will appear here.
                 </div>

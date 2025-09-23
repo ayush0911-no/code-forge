@@ -299,7 +299,7 @@ export function CodeEditor() {
             <DialogTitle>{isAnswer ? 'AI Answer' : 'AI Code Suggestion'}</DialogTitle>
           </DialogHeader>
           <div className="max-h-[60vh] overflow-auto rounded-md border bg-secondary/30 p-4">
-              <pre className="whitespace-pre-wrap break-words font-code text-sm">{generatedContent}</pre>
+              <pre className="whitespace-pre-wrap font-code text-sm">{generatedContent}</pre>
           </div>
           <DialogFooter className="sm:justify-between">
             {isAnswer ? (

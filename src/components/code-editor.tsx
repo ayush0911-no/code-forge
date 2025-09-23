@@ -243,6 +243,18 @@ a.href = url;
               <DialogHeader>
                 <DialogTitle>AI Assistant</DialogTitle>
               </DialogHeader>
+              <div className="flex flex-wrap gap-2 pt-2">
+                {languages.map((lang) => (
+                  <Button
+                    key={lang.value}
+                    variant={language === lang.value ? "default" : "outline"}
+                    size="sm"
+                    onClick={() => setLanguage(lang.value)}
+                  >
+                    {lang.label}
+                  </Button>
+                ))}
+              </div>
                 <Label htmlFor="ai-prompt" className="sr-only">AI Assistant</Label>
                 <Input
                   id="ai-prompt"

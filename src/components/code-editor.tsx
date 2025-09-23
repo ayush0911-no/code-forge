@@ -104,17 +104,12 @@ export function CodeEditor() {
     try {
       const result = await generateCode({ prompt: aiPrompt, language });
       
-      const isCodeResponse = result.code.includes('def ') || result.code.includes('class ') || result.code.includes('import ') || result.code.includes('public static void main');
-
-      if (isCodeResponse) {
-        // It's code, so no special formatting needed for the string itself
-        setGeneratedContent(result.code);
-        setIsAnswer(false);
-      } else {
-        // It's an answer, preserve whitespace
-        setGeneratedContent(result.code);
-        setIsAnswer(true);
-      }
+      const containsCodeKeywords = ['def ', 'class ', 'import ', 'public static void main', 'console.log', 'function', 'return', '#include', 'using namespace std'].some(kw => result.code.includes(kw));
+      const looksLikeCode = /[{};=<>]/.test(result.code);
+      const isCodeResponse = containsCodeKeywords || looksLikeCode;
+      
+      setGeneratedContent(result.code);
+      setIsAnswer(!isCodeResponse);
 
     } catch (error) {
       console.error("Code generation failed:", error);
@@ -353,5 +348,3 @@ a.href = url;
     </>
   );
 }
-
-    

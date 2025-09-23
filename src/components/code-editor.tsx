@@ -11,6 +11,7 @@ import { Textarea } from "@/components/ui/textarea";
 import { Label } from "@/components/ui/label";
 import { Hammer, Download, Trash2, LoaderCircle, Play } from "lucide-react";
 import { Input } from '@/components/ui/input';
+import { ThemeToggle } from '@/components/theme-toggle';
 
 export function CodeEditor() {
   const [code, setCode] = useState('');
@@ -35,7 +36,6 @@ export function CodeEditor() {
       const result: RunCodeOutput = await runCode({
         code,
         language,
-        input: currentInput,
       });
 
       let newOutput = result.output;
@@ -43,11 +43,15 @@ export function CodeEditor() {
         newOutput = `${output}\n${newOutput}`;
       }
 
-      setOutput(newOutput);
-
-      if (result.requiresInput) {
+      const requiresInput = newOutput.includes("input()");
+      if (requiresInput) {
+        const parts = newOutput.split("input()");
+        setOutput(parts[0]);
         setIsAwaitingInput(true);
+      } else {
+        setOutput(newOutput);
       }
+
     } catch (error) {
       console.error("Code execution failed:", error);
       const errorMessage = error instanceof Error ? error.message : "An unexpected error occurred.";
@@ -59,10 +63,11 @@ export function CodeEditor() {
       setOutput(prev => `${prev}\nError: ${errorMessage}`);
     } finally {
       setIsLoading(false);
-      setUserInput('');
+      if(!isAwaitingInput) {
+        setUserInput('');
+      }
     }
-  }, [code, language, toast, output]);
-
+  }, [code, language, toast, output, isAwaitingInput]);
 
   const handleDownload = useCallback(() => {
     const blob = new Blob([code], { type: 'text/plain' });
@@ -85,10 +90,35 @@ export function CodeEditor() {
   
   const handleInputSubmit = (e: React.FormEvent<HTMLFormElement>) => {
     e.preventDefault();
-    if(isAwaitingInput){
-        handleRunCode(userInput);
+    if (isAwaitingInput) {
+      const fullCode = code.replace(/input\(\)/, `"${userInput}"`);
+      runCodeWithInput(fullCode);
     }
   };
+
+  const runCodeWithInput = async (fullCode: string) => {
+    setIsLoading(true);
+    try {
+      const result: RunCodeOutput = await runCode({
+        code: fullCode,
+        language,
+      });
+      setOutput(prev => `${prev}${userInput}\n${result.output}`);
+    } catch (error) {
+       console.error("Code execution failed:", error);
+      const errorMessage = error instanceof Error ? error.message : "An unexpected error occurred.";
+      toast({
+        variant: "destructive",
+        title: "Execution Error",
+        description: `Could not run code. ${errorMessage}`,
+      });
+      setOutput(prev => `${prev}\nError: ${errorMessage}`);
+    } finally {
+      setIsLoading(false);
+      setIsAwaitingInput(false);
+      setUserInput('');
+    }
+  }
 
   return (
     <Card className="w-full max-w-6xl shadow-2xl">
@@ -102,6 +132,7 @@ export function CodeEditor() {
             </div>
           </div>
           <div className="flex w-full sm:w-auto items-center gap-2">
+            <ThemeToggle />
             <Select value={language} onValueChange={setLanguage}>
               <SelectTrigger className="w-full sm:w-[150px]">
                 <SelectValue placeholder="Select language" />
@@ -141,7 +172,7 @@ export function CodeEditor() {
         <div className="space-y-2">
           <Label htmlFor="code-output" className="text-sm font-semibold">Output</Label>
           <div id="code-output" className="relative min-h-[250px] h-full w-full overflow-auto rounded-lg border bg-secondary/30 p-4 font-code text-sm">
-            {isLoading && (
+            {isLoading && !isAwaitingInput && (
               <div className="absolute inset-0 z-10 flex flex-col items-center justify-center bg-background/80 backdrop-blur-sm">
                 <LoaderCircle className="h-8 w-8 animate-spin text-primary" />
                 <p className="mt-2 text-sm text-muted-foreground">Running code...</p>

@@ -12,7 +12,7 @@ import { Dialog, DialogContent, DialogHeader, DialogTitle, DialogFooter, DialogC
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from "@/components/ui/select";
 import { Textarea } from "@/components/ui/textarea";
 import { Label } from "@/components/ui/label";
-import { Hammer, Download, Trash2, LoaderCircle, Play, Sparkles } from "lucide-react";
+import { Hammer, Download, Trash2, LoaderCircle, Play, Sparkles, Copy, FileText } from "lucide-react";
 import { Input } from '@/components/ui/input';
 import { ThemeToggle } from '@/components/theme-toggle';
 
@@ -26,7 +26,8 @@ export function CodeEditor() {
   const [userInput, setUserInput] = useState('');
   const [isAwaitingInput, setIsAwaitingInput] = useState(false);
   const [aiPrompt, setAiPrompt] = useState('');
-  const [generatedCodeSuggestion, setGeneratedCodeSuggestion] = useState('');
+  const [generatedContent, setGeneratedContent] = useState('');
+  const [isAnswer, setIsAnswer] = useState(false);
   const [imageOutput, setImageOutput] = useState('');
 
 
@@ -84,10 +85,13 @@ export function CodeEditor() {
   const handleGenerateCode = async () => {
     if (aiPrompt.trim() === '') return;
     setIsGenerating(true);
-    setGeneratedCodeSuggestion('');
+    setGeneratedContent('');
+    setIsAnswer(false);
     try {
       const result = await generateCode({ prompt: aiPrompt, language });
-      setGeneratedCodeSuggestion(result.code);
+      setGeneratedContent(result.code);
+      const isCode = /^\s*```/.test(result.code) || /^\s*import/.test(result.code) || /^\s*(class|def|for|while|if)\s/.test(result.code) || result.code.includes('public static void main');
+      setIsAnswer(!isCode);
     } catch (error) {
       console.error("Code generation failed:", error);
       const errorMessage = error instanceof Error ? error.message : "An unexpected error occurred.";
@@ -102,12 +106,34 @@ export function CodeEditor() {
   };
   
   const handleAcceptSuggestion = () => {
-    setCode(generatedCodeSuggestion);
-    setGeneratedCodeSuggestion('');
+    setCode(generatedContent);
+    setGeneratedContent('');
+    setIsAnswer(false);
   };
 
   const handleDeclineSuggestion = () => {
-    setGeneratedCodeSuggestion('');
+    setGeneratedContent('');
+    setIsAnswer(false);
+  };
+
+  const handleCopyAnswer = () => {
+    navigator.clipboard.writeText(generatedContent);
+    toast({
+      title: "Copied to clipboard",
+      description: "The AI's answer has been copied to your clipboard.",
+    });
+  };
+
+  const handleDownloadAnswer = () => {
+    const blob = new Blob([generatedContent], { type: 'text/plain' });
+    const url = URL.createObjectURL(blob);
+    const a = document.createElement('a');
+    a.href = url;
+    a.download = `ai_answer.txt`;
+    document.body.appendChild(a);
+    a.click();
+    document.body.removeChild(a);
+    URL.revokeObjectURL(url);
   };
 
   const handleDownload = useCallback(() => {
@@ -215,11 +241,11 @@ export function CodeEditor() {
                   />
               </div>
                <div className="space-y-2">
-                <Label htmlFor="ai-prompt" className="text-sm font-semibold">AI Code Generation</Label>
+                <Label htmlFor="ai-prompt" className="text-sm font-semibold">AI Assistant</Label>
                 <div className="flex gap-2">
                   <Input
                     id="ai-prompt"
-                    placeholder="Tell the AI what code to generate..."
+                    placeholder="Ask a question or describe the code to generate..."
                     value={aiPrompt}
                     onChange={(e) => setAiPrompt(e.target.value)}
                     onKeyDown={(e) => e.key === 'Enter' && handleGenerateCode()}
@@ -234,10 +260,10 @@ export function CodeEditor() {
           <div className="space-y-2">
             <Label htmlFor="code-output" className="text-sm font-semibold">Output</Label>
             <div id="code-output" className="relative min-h-[250px] h-full w-full overflow-auto rounded-lg border bg-secondary/30 p-4 font-code text-sm">
-              {(isLoading && !isAwaitingInput) || (isGenerating && !generatedCodeSuggestion) ? (
+              {(isLoading && !isAwaitingInput) || (isGenerating && !generatedContent) ? (
                 <div className="absolute inset-0 z-10 flex flex-col items-center justify-center bg-background/80 backdrop-blur-sm">
                   <LoaderCircle className="h-8 w-8 animate-spin text-primary" />
-                  <p className="mt-2 text-sm text-muted-foreground">{isGenerating ? 'Generating code...' : 'Running code...'}</p>
+                  <p className="mt-2 text-sm text-muted-foreground">{isGenerating ? 'Generating response...' : 'Running code...'}</p>
                 </div>
               ): null}
               
@@ -267,20 +293,34 @@ export function CodeEditor() {
           </div>
         </CardContent>
       </Card>
-      <Dialog open={!!generatedCodeSuggestion} onOpenChange={(isOpen) => !isOpen && setGeneratedCodeSuggestion('')}>
+      <Dialog open={!!generatedContent} onOpenChange={(isOpen) => !isOpen && setGeneratedContent('')}>
         <DialogContent className="max-w-2xl">
           <DialogHeader>
-            <DialogTitle>AI Code Suggestion</DialogTitle>
+            <DialogTitle>{isAnswer ? 'AI Answer' : 'AI Code Suggestion'}</DialogTitle>
           </DialogHeader>
           <div className="max-h-[60vh] overflow-auto rounded-md border bg-secondary/30 p-4">
-              <pre className="whitespace-pre-wrap break-words font-code text-sm">{generatedCodeSuggestion}</pre>
+              <pre className="whitespace-pre-wrap break-words font-code text-sm">{generatedContent}</pre>
           </div>
-          <DialogFooter>
-            <Button variant="outline" onClick={handleDeclineSuggestion}>Decline</Button>
-            <Button onClick={handleAcceptSuggestion}>Accept</Button>
+          <DialogFooter className="sm:justify-between">
+            {isAnswer ? (
+              <div className="flex gap-2">
+                 <Button variant="outline" onClick={handleCopyAnswer}><Copy className="mr-2" /> Copy</Button>
+                 <Button variant="outline" onClick={handleDownloadAnswer}><FileText className="mr-2" /> Download</Button>
+              </div>
+            ) : (
+               <Button variant="outline" onClick={handleDeclineSuggestion}>Decline</Button>
+            )}
+
+            {isAnswer ? (
+               <Button onClick={handleDeclineSuggestion}>Close</Button>
+            ) : (
+               <Button onClick={handleAcceptSuggestion}>Accept</Button>
+            )}
           </DialogFooter>
         </DialogContent>
       </Dialog>
     </>
   );
 }
+
+    

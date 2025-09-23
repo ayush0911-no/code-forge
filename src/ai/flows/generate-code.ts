@@ -33,9 +33,10 @@ const prompt = ai.definePrompt({
 
 Follow these instructions carefully:
 1.  Analyze the user's prompt to understand their requirements.
-2.  Generate code only in the specified language.
-3.  Ensure the generated code is syntactically correct and follows the best practices for the given language.
-4.  The output should contain ONLY the raw code. Do not include any explanations, comments, or markdown formatting like \`\`\`language ... \`\`\`.
+2.  Generate a complete, runnable program. Do not provide snippets or incomplete code.
+3.  Generate code only in the specified language.
+4.  Ensure the generated code is syntactically correct and follows the best practices for the given language.
+5.  The output should contain ONLY the raw code. Do not include any explanations, comments, or markdown formatting like \`\`\`language ... \`\`\`.
 
 Language: {{{language}}}
 User Request: {{{prompt}}}

@@ -29,11 +29,16 @@ const prompt = ai.definePrompt({
   name: 'generateCodePrompt',
   input: {schema: GenerateCodeInputSchema},
   output: {schema: GenerateCodeOutputSchema},
-  prompt: `You are a code generation expert. Given the following prompt and language, generate the code.
-Return only the generated code, without any markdown formatting or explanations.
+  prompt: `You are an expert programmer and a helpful coding assistant. Your task is to generate clean, efficient, and correct code based on the user's request.
+
+Follow these instructions carefully:
+1.  Analyze the user's prompt to understand their requirements.
+2.  Generate code only in the specified language.
+3.  Ensure the generated code is syntactically correct and follows the best practices for the given language.
+4.  The output should contain ONLY the raw code. Do not include any explanations, comments, or markdown formatting like \`\`\`language ... \`\`\`.
 
 Language: {{{language}}}
-Prompt: {{{prompt}}}
+User Request: {{{prompt}}}
 `,
 });
 

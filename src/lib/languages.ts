@@ -5,7 +5,7 @@ export type Language = {
 };
 
 export const languages: Language[] = [
-  { value: 'javascript', label: 'JavaScript', extension: 'js' },
   { value: 'python', label: 'Python', extension: 'py' },
   { value: 'java', label: 'Java', extension: 'java' },
+  { value: 'c', label: 'C', extension: 'c' },
 ];

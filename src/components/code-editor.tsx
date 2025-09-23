@@ -2,6 +2,7 @@
 
 import { useState, useCallback, useMemo } from 'react';
 import { runCode, RunCodeOutput } from '@/ai/flows/run-code';
+import { generateCode } from '@/ai/flows/generate-code';
 import { languages, type Language } from '@/lib/languages';
 import { useToast } from "@/hooks/use-toast";
 import { Button } from "@/components/ui/button";
@@ -9,7 +10,7 @@ import { Card, CardContent, CardDescription, CardHeader, CardTitle } from "@/com
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from "@/components/ui/select";
 import { Textarea } from "@/components/ui/textarea";
 import { Label } from "@/components/ui/label";
-import { Hammer, Download, Trash2, LoaderCircle, Play } from "lucide-react";
+import { Hammer, Download, Trash2, LoaderCircle, Play, Sparkles } from "lucide-react";
 import { Input } from '@/components/ui/input';
 import { ThemeToggle } from '@/components/theme-toggle';
 
@@ -18,9 +19,11 @@ export function CodeEditor() {
   const [language, setLanguage] = useState(languages[0].value);
   const [output, setOutput] = useState('');
   const [isLoading, setIsLoading] = useState(false);
+  const [isGenerating, setIsGenerating] = useState(false);
   const { toast } = useToast();
   const [userInput, setUserInput] = useState('');
   const [isAwaitingInput, setIsAwaitingInput] = useState(false);
+  const [aiPrompt, setAiPrompt] = useState('');
 
   const selectedLanguage = useMemo(() => languages.find(l => l.value === language) || languages[0], [language]);
 
@@ -68,6 +71,25 @@ export function CodeEditor() {
       }
     }
   }, [code, language, toast, output, isAwaitingInput]);
+
+  const handleGenerateCode = async () => {
+    if (aiPrompt.trim() === '') return;
+    setIsGenerating(true);
+    try {
+      const result = await generateCode({ prompt: aiPrompt, language });
+      setCode(result.code);
+    } catch (error) {
+      console.error("Code generation failed:", error);
+      const errorMessage = error instanceof Error ? error.message : "An unexpected error occurred.";
+      toast({
+        variant: "destructive",
+        title: "Generation Error",
+        description: `Could not generate code. ${errorMessage}`,
+      });
+    } finally {
+      setIsGenerating(false);
+    }
+  };
 
   const handleDownload = useCallback(() => {
     const blob = new Blob([code], { type: 'text/plain' });
@@ -149,8 +171,8 @@ export function CodeEditor() {
             <Button variant="destructive" size="icon" onClick={handleClear} aria-label="Clear editor">
               <Trash2 className="h-4 w-4" />
             </Button>
-            <Button onClick={() => handleRunCode()} disabled={isLoading}>
-              <Play className="mr-2 h-4 w-4" />
+            <Button onClick={() => handleRunCode()} disabled={isLoading || isGenerating}>
+              {isLoading ? <LoaderCircle className="mr-2 h-4 w-4 animate-spin" /> : <Play className="mr-2 h-4 w-4" />}
               Run Code
             </Button>
           </div>
@@ -158,24 +180,40 @@ export function CodeEditor() {
       </CardHeader>
       <CardContent className="grid grid-cols-1 md:grid-cols-2 gap-4">
         <div className="flex flex-col gap-4">
-            <div className="space-y-2">
+            <div className="space-y-2 flex-grow flex flex-col">
                 <Label htmlFor="code-input" className="text-sm font-semibold">Your Code</Label>
                 <Textarea
                     id="code-input"
                     placeholder={`// Start writing your ${selectedLanguage.label} code here...`}
                     value={code}
                     onChange={(e) => setCode(e.target.value)}
-                    className="min-h-[150px] font-code text-sm resize-y h-full"
+                    className="min-h-[150px] font-code text-sm resize-y flex-grow"
                 />
+            </div>
+             <div className="space-y-2">
+              <Label htmlFor="ai-prompt" className="text-sm font-semibold">AI Code Generation</Label>
+              <div className="flex gap-2">
+                <Input
+                  id="ai-prompt"
+                  placeholder="Tell the AI what code to generate..."
+                  value={aiPrompt}
+                  onChange={(e) => setAiPrompt(e.target.value)}
+                  onKeyDown={(e) => e.key === 'Enter' && handleGenerateCode()}
+                />
+                <Button onClick={handleGenerateCode} disabled={isGenerating || isLoading}>
+                  {isGenerating ? <LoaderCircle className="mr-2 h-4 w-4 animate-spin" /> : <Sparkles className="mr-2 h-4 w-4" />}
+                  Generate
+                </Button>
+              </div>
             </div>
         </div>
         <div className="space-y-2">
           <Label htmlFor="code-output" className="text-sm font-semibold">Output</Label>
           <div id="code-output" className="relative min-h-[250px] h-full w-full overflow-auto rounded-lg border bg-secondary/30 p-4 font-code text-sm">
-            {isLoading && !isAwaitingInput && (
+            {(isLoading && !isAwaitingInput) || isGenerating && (
               <div className="absolute inset-0 z-10 flex flex-col items-center justify-center bg-background/80 backdrop-blur-sm">
                 <LoaderCircle className="h-8 w-8 animate-spin text-primary" />
-                <p className="mt-2 text-sm text-muted-foreground">Running code...</p>
+                <p className="mt-2 text-sm text-muted-foreground">{isGenerating ? 'Generating code...' : 'Running code...'}</p>
               </div>
             )}
             

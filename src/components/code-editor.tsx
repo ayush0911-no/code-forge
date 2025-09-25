@@ -32,6 +32,7 @@ export function CodeEditor() {
   const [lineCount, setLineCount] = useState(1);
   const textareaRef = useRef<HTMLTextAreaElement>(null);
   const lineNumbersRef = useRef<HTMLDivElement>(null);
+  const [interactiveSession, setInteractiveSession] = useState<{ originalCode: string; remainingCode: string } | null>(null);
 
   useEffect(() => {
     const lines = code.split('\n').length;
@@ -54,12 +55,18 @@ export function CodeEditor() {
     }
     setIsLoading(true);
     setIsAwaitingInput(false);
-    setOutput(''); // Clear previous output before new run
+    setOutput('');
     setImageOutput('');
+    setInteractiveSession({ originalCode: code, remainingCode: code });
 
+    await runCodeSegment(code);
+  }, [code, language, toast]);
+
+  const runCodeSegment = async (codeToRun: string) => {
+    setIsLoading(true);
     try {
       const result: RunCodeOutput = await runCode({
-        code,
+        code: codeToRun,
         language,
       });
 
@@ -68,16 +75,18 @@ export function CodeEditor() {
       }
       
       let newOutput = result.output;
+      
+      const inputPromptIndex = newOutput.search(/<input_prompt>/);
 
-      const requiresInput = newOutput.includes("input()");
-      if (requiresInput) {
-        const parts = newOutput.split("input()");
-        setOutput(parts[0]);
+      if (inputPromptIndex !== -1) {
+        const promptText = newOutput.substring(0, inputPromptIndex);
+        setOutput(prev => prev + promptText);
         setIsAwaitingInput(true);
       } else {
-        setOutput(newOutput);
+        setOutput(prev => prev + newOutput);
+        setIsAwaitingInput(false);
+        setInteractiveSession(null);
       }
-
     } catch (error) {
       console.error("Code execution failed:", error);
       const errorMessage = error instanceof Error ? error.message : "An unexpected error occurred.";
@@ -87,13 +96,12 @@ export function CodeEditor() {
         description: `Could not run code. ${errorMessage}`,
       });
       setOutput(prev => `${prev}\nError: ${errorMessage}`);
+      setInteractiveSession(null);
     } finally {
       setIsLoading(false);
-      if(!isAwaitingInput) {
-        setUserInput('');
-      }
     }
-  }, [code, language, toast]);
+  };
+
 
   const handleGenerateCode = async () => {
     if (aiPrompt.trim() === '') return;
@@ -173,42 +181,23 @@ a.href = url;
     setCode('');
     setOutput('');
     setImageOutput('');
+    setInteractiveSession(null);
+    setIsAwaitingInput(false);
   }
   
-  const handleInputSubmit = (e: React.FormEvent<HTMLFormElement>) => {
+  const handleInputSubmit = async (e: React.FormEvent<HTMLFormElement>) => {
     e.preventDefault();
-    if (isAwaitingInput) {
-      const fullCode = code.replace(/input\(\)/, `"${userInput}"`);
-      runCodeWithInput(fullCode);
-    }
-  };
-
-  const runCodeWithInput = async (fullCode: string) => {
-    setIsLoading(true);
-    try {
-      const result: RunCodeOutput = await runCode({
-        code: fullCode,
-        language,
-      });
-      if(result.image) {
-        setImageOutput(result.image);
-      }
-      setOutput(prev => `${prev}${userInput}\n${result.output}\n`);
-    } catch (error) {
-       console.error("Code execution failed:", error);
-      const errorMessage = error instanceof Error ? error.message : "An unexpected error occurred.";
-      toast({
-        variant: "destructive",
-        title: "Execution Error",
-        description: `Could not run code. ${errorMessage}`,
-      });
-      setOutput(prev => `${prev}\nError: ${errorMessage}`);
-    } finally {
-      setIsLoading(false);
+    if (isAwaitingInput && interactiveSession) {
+      setOutput(prev => prev + userInput + '\n');
       setIsAwaitingInput(false);
+
+      const codeWithInput = `__user_input__ = """${userInput}"""\n` + interactiveSession.remainingCode;
+
+      await runCodeSegment(codeWithInput);
+
       setUserInput('');
     }
-  }
+  };
 
   return (
     <>
@@ -231,8 +220,8 @@ a.href = url;
           <ThemeToggle />
           <Button variant="outline" size="sm" onClick={handleDownload}><Download className="mr-2" /> Download</Button>
           <Button variant="outline" size="sm" onClick={handleClearCode}><Trash2 className="mr-2" /> Clear</Button>
-          <Button size="sm" onClick={() => handleRunCode()} disabled={isLoading || isGenerating}>
-            {isLoading ? <LoaderCircle className="mr-2 h-4 w-4 animate-spin" /> : <Play className="mr-2 h-4 w-4" />}
+          <Button size="sm" onClick={handleRunCode} disabled={isLoading || isGenerating}>
+            {isLoading && !isAwaitingInput ? <LoaderCircle className="mr-2 h-4 w-4 animate-spin" /> : <Play className="mr-2 h-4 w-4" />}
             Compile & Run
           </Button>
           <Dialog open={isAiDialogOpen} onOpenChange={setIsAiDialogOpen}>

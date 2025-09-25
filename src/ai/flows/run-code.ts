@@ -30,11 +30,15 @@ const prompt = ai.definePrompt({
   name: 'runCodePrompt',
   input: {schema: RunCodeInputSchema},
   output: {schema: RunCodeOutputSchema},
-  prompt: `You are a code execution engine. Given the following code and language, execute it and return the output.
+  prompt: `You are a code execution engine. You will execute the given code and return its output.
 
-If the code uses a library like matplotlib to generate a plot, instead of returning text output, you must return a data URI of the generated image in the 'image' field of the output.
-
-If the code has syntax errors or would cause a runtime error, return an error message as the output.
+Handle interactive input as follows:
+1.  **Check for \`__user_input__\`:** Before executing, check if a variable named \`__user_input__\` exists. This variable will be provided by the environment and will contain the user's interactive input as a string.
+2.  **Simulate \`input()\`:**
+    *   **If \`__user_input__\` is present:** Use its value for the FIRST occurrence of an \`input()\` call (or equivalent for the language) in the code.
+    *   **If \`__user_input__\` is NOT present:** When you encounter the first \`input()\` call, STOP execution at that point. Print any output generated so far, and then print the special marker \`<input_prompt>\`. Do not attempt to execute any further code.
+3.  **Plots and Images:** If the code generates a plot (e.g., with matplotlib), return a data URI of the image in the 'image' field instead of text output.
+4.  **Errors:** If the code has syntax or runtime errors, return a clear error message as the output.
 
 Language: {{{language}}}
 Code:
@@ -42,7 +46,7 @@ Code:
 {{{code}}}
 \`\`\`
 
-Return only the output of the code as if it were run in a console.
+Execute the code according to the rules above. Return ONLY the output.
 `,
 });
 

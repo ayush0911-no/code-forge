@@ -204,7 +204,7 @@ a.href = url;
           </Button>
           <Dialog open={isAiDialogOpen} onOpenChange={setIsAiDialogOpen}>
             <DialogTrigger asChild>
-              <Button>AI Seva</Button>
+              <Button><Sparkles className="mr-2 h-4 w-4" />AI Seva</Button>
             </DialogTrigger>
             <DialogContent>
               <DialogHeader>

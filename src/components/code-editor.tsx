@@ -224,7 +224,7 @@ a.href = url;
         <div className="flex flex-col gap-2 flex-grow-[2] basis-0">
           <h2 className="text-lg font-semibold tracking-tight">Code Editor</h2>
           <div className="flex-grow relative border border-border/60 rounded-lg overflow-hidden">
-            <div ref={lineNumbersRef} className="absolute left-0 top-0 h-full overflow-hidden bg-zinc-900/50 dark:bg-zinc-900/80 text-right pr-2 pt-2 select-none text-muted-foreground font-code text-sm" style={{ width: '40px' }}>
+            <div ref={lineNumbersRef} className="absolute left-0 top-0 h-full overflow-hidden bg-secondary text-right pr-2 pt-2 select-none text-muted-foreground font-code text-sm" style={{ width: '40px' }}>
               {Array.from({ length: lineCount }, (_, i) => i + 1).map(i => <div key={i}>{i}</div>)}
             </div>
             <Textarea
@@ -243,7 +243,7 @@ a.href = url;
         
         <div className="flex flex-col gap-2 flex-grow basis-0">
           <h2 className="text-lg font-semibold tracking-tight">Output</h2>
-          <div id="code-output" className="relative flex-grow min-h-[150px] overflow-auto rounded-lg border border-border/60 bg-zinc-900/50 dark:bg-zinc-900/80 p-4 font-code text-sm">
+          <div id="code-output" className="relative flex-grow min-h-[150px] overflow-auto rounded-lg border border-border/60 bg-secondary dark:bg-zinc-900/80 p-4 font-code text-sm">
             {isLoading ? (
               <div className="absolute inset-0 z-10 flex flex-col items-center justify-center bg-background/80 backdrop-blur-sm">
                 <LoaderCircle className="h-8 w-8 animate-spin text-primary" />

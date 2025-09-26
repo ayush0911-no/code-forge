@@ -263,12 +263,12 @@ export function CodeEditor() {
           backgroundImage: "url('https://images.unsplash.com/photo-1542401886-65d6c61db217?q=80&w=2070&auto=format&fit=crop&ixlib=rb-4.0.3&ixid=M3wxMjA3fDB8MHxwaG90by1wYWdlfHx8fGVufDB8fHx8fA%3D%3D')",
         }}
     >
-      <div className="absolute inset-0 bg-black/50 backdrop-blur-sm" />
+      <div className="absolute inset-0 bg-background/50 backdrop-blur-sm" />
     </div>
-      <header className="flex h-16 shrink-0 items-center justify-between border-b border-white/10 bg-black/30 px-4 md:px-6">
+      <header className="flex h-16 shrink-0 items-center justify-between border-b border-foreground/10 bg-background/30 px-4 md:px-6">
         <div className="flex items-center gap-3">
           <Code className="h-7 w-7 text-primary" />
-          <h1 className="text-xl font-bold tracking-tighter font-headline text-white">CodeForge</h1>
+          <h1 className="text-xl font-bold tracking-tighter font-headline text-foreground">CodeForge</h1>
         </div>
         <div className="flex items-center gap-2 md:gap-4">
           <Dialog open={isAiDialogOpen} onOpenChange={setIsAiDialogOpen}>
@@ -319,20 +319,20 @@ export function CodeEditor() {
                 <div className="flex items-center justify-end">
                     <Button variant="outline" size="sm" onClick={() => setHistory([])} disabled={history.length === 0}><Trash2 className="mr-2"/> Clear History</Button>
                 </div>
-                <div id="code-history" className="relative flex-grow min-h-[300px] max-h-[60vh] overflow-auto rounded-lg border bg-secondary/30 text-white">
+                <div id="code-history" className="relative flex-grow min-h-[300px] max-h-[60vh] overflow-auto rounded-lg border bg-secondary/30 text-foreground">
                     <ScrollArea className="h-full">
                     {history.length === 0 ? (
-                        <div className="flex h-full items-center justify-center text-white/50 p-4">
+                        <div className="flex h-full items-center justify-center text-muted-foreground p-4">
                             Your code execution history will appear here.
                         </div>
                     ) : (
                         <div className='p-4 space-y-2'>
                         {history.map((item, index) => (
-                            <Card key={index} className='bg-black/20 border-white/10'>
+                            <Card key={index} className='bg-card/50 border-border/50'>
                                 <CardContent className='p-3 flex items-center justify-between'>
                                     <div className='w-full pr-2'>
                                       <div className="font-semibold text-sm capitalize">{item.name}</div>
-                                      <div className="text-xs text-white/60">{languages.find(l => l.value === item.language)?.label}</div>
+                                      <div className="text-xs text-muted-foreground">{languages.find(l => l.value === item.language)?.label}</div>
                                     </div>
                                     <Button size="icon" variant="ghost" onClick={() => handleRestoreHistory(item)}>
                                         <RotateCcw className='h-4 w-4' />
@@ -370,9 +370,9 @@ export function CodeEditor() {
       
       <main className="flex-1 grid grid-cols-1 p-4 md:p-6 gap-6">
         <div className="flex flex-col gap-2 min-h-[40vh]">
-          <h2 className="text-lg font-semibold tracking-tight text-white">Code Editor</h2>
-          <div className="flex-grow relative border border-white/10 rounded-lg overflow-hidden bg-black/30">
-            <div ref={lineNumbersRef} className="absolute left-0 top-0 h-full overflow-hidden bg-black/20 text-right pr-2 pt-2 select-none text-white/50 font-code text-sm" style={{ width: '40px' }}>
+          <h2 className="text-lg font-semibold tracking-tight text-foreground">Code Editor</h2>
+          <Card className="flex-grow relative overflow-hidden">
+            <div ref={lineNumbersRef} className="absolute left-0 top-0 h-full overflow-hidden bg-muted/30 text-right pr-2 pt-2 select-none text-muted-foreground font-code text-sm" style={{ width: '40px' }}>
               {Array.from({ length: lineCount }, (_, i) => i + 1).map(i => <div key={i}>{i}</div>)}
             </div>
             <Textarea
@@ -382,43 +382,43 @@ export function CodeEditor() {
               value={code}
               onChange={(e) => setCode(e.target.value)}
               onScroll={handleTextareaScroll}
-              className="absolute inset-0 w-full h-full font-code text-sm resize-none bg-transparent border-0 focus-visible:ring-0 focus-visible:ring-offset-0 text-white"
+              className="absolute inset-0 w-full h-full font-code text-sm resize-none bg-transparent border-0 focus-visible:ring-0 focus-visible:ring-offset-0 text-foreground"
               style={{ paddingLeft: '50px' }}
               spellCheck="false"
             />
-          </div>
+          </Card>
         </div>
         
         <div className="flex flex-col gap-2 min-h-[30vh]">
-            <h2 className="text-lg font-semibold tracking-tight text-white">Output</h2>
-            <div className="relative flex-grow flex flex-col min-h-[150px] rounded-lg border border-white/10 bg-black/30 text-white">
+            <h2 className="text-lg font-semibold tracking-tight text-foreground">Output</h2>
+            <Card className="relative flex-grow flex flex-col min-h-[150px] text-foreground">
               <ScrollArea className="flex-grow p-4">
                 <div id="code-output" ref={outputRef} className="font-code text-sm h-full">
                   {isLoading && !isAwaitingInput ? (
-                    <div className="absolute inset-0 z-10 flex flex-col items-center justify-center bg-black/50 backdrop-blur-sm">
+                    <div className="absolute inset-0 z-10 flex flex-col items-center justify-center bg-background/50 backdrop-blur-sm">
                       <LoaderCircle className="h-8 w-8 animate-spin text-primary" />
-                      <p className="mt-2 text-sm text-white/70">Running code...</p>
+                      <p className="mt-2 text-sm text-muted-foreground">Running code...</p>
                     </div>
                   ) : null}
                   <pre className="whitespace-pre-wrap break-words"><code className={output.includes('Error:') ? 'text-destructive' : ''}>{output}</code></pre>
                   {imageOutput && <Image src={imageOutput} alt="Generated plot" width={400} height={300} />}
                   
                   {!isLoading && !output && !imageOutput && !isAwaitingInput && (
-                      <div className="flex h-full items-start justify-start text-white/50">
+                      <div className="flex h-full items-start justify-start text-muted-foreground">
                       Output will be displayed here.
                       </div>
                   )}
                 </div>
               </ScrollArea>
               {isAwaitingInput && (
-                <div className="flex items-center gap-2 border-t border-white/10 p-2">
+                <div className="flex items-center gap-2 border-t border-border p-2">
                   <Input
                     type="text"
                     value={interactiveInput}
                     onChange={(e) => setInteractiveInput(e.target.value)}
                     onKeyDown={(e) => e.key === 'Enter' && handleInteractiveInput()}
                     placeholder="Enter input..."
-                    className="flex-grow bg-transparent border-0 focus-visible:ring-0 text-white"
+                    className="flex-grow bg-transparent border-0 focus-visible:ring-0 text-foreground"
                     disabled={isLoading}
                   />
                   <Button onClick={handleInteractiveInput} disabled={isLoading} size="sm">
@@ -427,7 +427,7 @@ export function CodeEditor() {
                   </Button>
                 </div>
               )}
-            </div>
+            </Card>
           </div>
       </main>
 

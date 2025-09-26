@@ -183,25 +183,6 @@ a.href = url;
         <div className="flex items-center gap-3">
           <Code className="h-7 w-7 text-primary" />
           <h1 className="text-xl font-bold tracking-tighter font-headline">codeforge</h1>
-        </div>
-        <div className="flex items-center gap-2 md:gap-4">
-          <Select value={language} onValueChange={setLanguage}>
-            <SelectTrigger className="w-[120px] h-9 text-sm">
-              <SelectValue placeholder="Select language" />
-            </SelectTrigger>
-            <SelectContent>
-              {languages.map((lang) => (
-                <SelectItem key={lang.value} value={lang.value}>{lang.label}</SelectItem>
-              ))}
-            </SelectContent>
-          </Select>
-          <ThemeToggle />
-          <Button variant="outline" size="sm" onClick={handleDownload}><CustomDownloadIcon className="mr-2" /> Download</Button>
-          <Button variant="outline" size="sm" onClick={handleClearCode}><Trash2 className="mr-2" /> Clear</Button>
-          <Button size="sm" onClick={() => handleRunCode()} disabled={isLoading || isGenerating}>
-            {isLoading ? <LoaderCircle className="mr-2 h-4 w-4 animate-spin" /> : <Play className="mr-2 h-4 w-4" />}
-            Compile & Run
-          </Button>
           <Dialog open={isAiDialogOpen} onOpenChange={setIsAiDialogOpen}>
             <DialogTrigger asChild>
               <Button><Sparkles className="mr-2 h-4 w-4" />AI Seva</Button>
@@ -238,6 +219,25 @@ a.href = url;
               </DialogFooter>
             </DialogContent>
           </Dialog>
+        </div>
+        <div className="flex items-center gap-2 md:gap-4">
+          <Select value={language} onValueChange={setLanguage}>
+            <SelectTrigger className="w-[120px] h-9 text-sm">
+              <SelectValue placeholder="Select language" />
+            </SelectTrigger>
+            <SelectContent>
+              {languages.map((lang) => (
+                <SelectItem key={lang.value} value={lang.value}>{lang.label}</SelectItem>
+              ))}
+            </SelectContent>
+          </Select>
+          <ThemeToggle />
+          <Button variant="outline" size="sm" onClick={handleDownload}><CustomDownloadIcon className="mr-2" /> Download</Button>
+          <Button variant="outline" size="sm" onClick={handleClearCode}><Trash2 className="mr-2" /> Clear</Button>
+          <Button size="sm" onClick={() => handleRunCode()} disabled={isLoading || isGenerating}>
+            {isLoading ? <LoaderCircle className="mr-2 h-4 w-4 animate-spin" /> : <Play className="mr-2 h-4 w-4" />}
+            Compile & Run
+          </Button>
         </div>
       </header>
       

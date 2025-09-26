@@ -12,7 +12,7 @@ import { Dialog, DialogContent, DialogHeader, DialogTitle, DialogFooter, DialogC
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from "@/components/ui/select";
 import { Textarea } from "@/components/ui/textarea";
 import { Label } from "@/components/ui/label";
-import { Code, Download, LoaderCircle, Play, Sparkles, Copy, FileText, Trash2, History, RotateCcw } from "lucide-react";
+import { Code, Download, LoaderCircle, Play, Sparkles, Copy, FileText, Trash2, History, RotateCcw, Send } from "lucide-react";
 import { Input } from '@/components/ui/input';
 import { ThemeToggle } from '@/components/theme-toggle';
 import { Card, CardContent, CardHeader, CardTitle } from '@/components/ui/card';
@@ -68,6 +68,11 @@ export function CodeEditor() {
   const lineNumbersRef = useRef<HTMLDivElement>(null);
   const outputRef = useRef<HTMLDivElement>(null);
 
+  const [sessionHistory, setSessionHistory] = useState<string[]>([]);
+  const [isAwaitingInput, setIsAwaitingInput] = useState(false);
+  const [interactiveInput, setInteractiveInput] = useState('');
+
+
   useEffect(() => {
     if (outputRef.current) {
         outputRef.current.scrollTop = outputRef.current.scrollHeight;
@@ -94,46 +99,74 @@ export function CodeEditor() {
     }
   };
 
-  const handleRunCode = useCallback(async () => {
+  const executeCode = useCallback(async (currentInput?: string) => {
     if (code.trim() === '') {
       setOutput('');
       setImageOutput('');
       return;
     }
     setIsLoading(true);
+    
+    try {
+      const result = await runCode({
+        code,
+        language,
+        input: currentInput,
+        sessionHistory: currentInput ? sessionHistory : [],
+      });
+
+      setOutput(result.output);
+      setSessionHistory(result.sessionHistory || []);
+      setIsAwaitingInput(result.isAwaitingInput || false);
+
+      if (result.image) {
+        setImageOutput(result.image);
+      } else {
+        setImageOutput('');
+      }
+
+      return result;
+    } catch (error) {
+      console.error("Code execution failed:", error);
+      const errorMessage = error instanceof Error ? error.message : "An unexpected error occurred.";
+      toast({
+        variant: "destructive",
+        title: "Execution Error",
+        description: `Could not run code. ${errorMessage}`,
+      });
+      setOutput(prev => `${prev}\nError: ${errorMessage}`);
+      setIsAwaitingInput(false);
+    } finally {
+      setIsLoading(false);
+    }
+  }, [code, language, sessionHistory, toast]);
+
+  const handleRunCode = useCallback(async () => {
     setOutput('');
     setImageOutput('');
-
-    const runCodePromise = runCode({ code, language });
-    const summarizeCodePromise = summarizeCode({ code, language });
-
-    try {
-        const result = await runCodePromise;
-        setOutput(result.output);
-        if (result.image) {
-          setImageOutput(result.image);
-        }
-    } catch (error) {
-        console.error("Code execution failed:", error);
-        const errorMessage = error instanceof Error ? error.message : "An unexpected error occurred.";
-        toast({
-          variant: "destructive",
-          title: "Execution Error",
-          description: `Could not run code. ${errorMessage}`,
-        });
-        setOutput(`Error: ${errorMessage}`);
-    } finally {
-        setIsLoading(false);
-    }
+    setSessionHistory([]);
+    setIsAwaitingInput(false);
     
-    summarizeCodePromise.then(summaryResult => {
+    const executionPromise = executeCode();
+    
+    summarizeCode({ code, language }).then(summaryResult => {
       setHistory(prev => [{ code, language, name: summaryResult.name }, ...prev.slice(0, 49)]);
     }).catch(error => {
       console.error("Code summarization failed:", error);
       setHistory(prev => [{ code, language, name: 'Untitled' }, ...prev.slice(0, 49)]);
     });
 
-  }, [code, language, toast]);
+    await executionPromise;
+
+  }, [code, language, executeCode]);
+
+
+  const handleInteractiveInput = async () => {
+    if (interactiveInput.trim() === '') return;
+    setOutput(prev => `${prev}${interactiveInput}\n`);
+    await executeCode(interactiveInput);
+    setInteractiveInput('');
+  };
 
   const handleGenerateCode = async () => {
     if (aiPrompt.trim() === '') return;
@@ -286,7 +319,7 @@ export function CodeEditor() {
           <Button variant="outline" size="sm" onClick={handleDownload}><CustomDownloadIcon className="mr-2" /> Download</Button>
           <Button variant="outline" size="sm" onClick={handleClearCode}><Trash2 className="mr-2" /> Clear</Button>
           <Button size="sm" onClick={() => handleRunCode()} disabled={isLoading || isGenerating}>
-            {isLoading ? <LoaderCircle className="mr-2 h-4 w-4 animate-spin" /> : <Play className="mr-2 h-4 w-4" />}
+            {isLoading && !isAwaitingInput ? <LoaderCircle className="mr-2 h-4 w-4 animate-spin" /> : <Play className="mr-2 h-4 w-4" />}
             Compile & Run
           </Button>
         </div>
@@ -316,22 +349,42 @@ export function CodeEditor() {
         <div className="grid grid-rows-2 gap-6">
           <div className="flex flex-col gap-2">
             <h2 className="text-lg font-semibold tracking-tight text-white">Output</h2>
-            <div id="code-output" ref={outputRef} className="relative flex-grow min-h-[150px] overflow-auto rounded-lg border border-white/10 bg-black/30 p-4 font-code text-sm text-white">
-              {isLoading ? (
-                <div className="absolute inset-0 z-10 flex flex-col items-center justify-center bg-black/50 backdrop-blur-sm">
-                  <LoaderCircle className="h-8 w-8 animate-spin text-primary" />
-                  <p className="mt-2 text-sm text-white/70">Running code...</p>
+            <div className="relative flex-grow flex flex-col min-h-[150px] rounded-lg border border-white/10 bg-black/30 text-white">
+              <ScrollArea className="flex-grow p-4">
+                <div id="code-output" ref={outputRef} className="font-code text-sm h-full">
+                  {isLoading && !isAwaitingInput ? (
+                    <div className="absolute inset-0 z-10 flex flex-col items-center justify-center bg-black/50 backdrop-blur-sm">
+                      <LoaderCircle className="h-8 w-8 animate-spin text-primary" />
+                      <p className="mt-2 text-sm text-white/70">Running code...</p>
+                    </div>
+                  ) : null}
+                  <pre className="whitespace-pre-wrap break-words"><code className={output.includes('Error:') ? 'text-destructive' : ''}>{output}</code></pre>
+                  {imageOutput && <Image src={imageOutput} alt="Generated plot" width={400} height={300} />}
+                  
+                  {!isLoading && !output && !imageOutput && !isAwaitingInput && (
+                      <div className="flex h-full items-start justify-start text-white/50">
+                      Output will be displayed here.
+                      </div>
+                  )}
                 </div>
-              ) : null}
-              <pre className="whitespace-pre-wrap break-words"><code className={output.includes('Error:') ? 'text-destructive' : ''}>{output}</code></pre>
-              {imageOutput && <Image src={imageOutput} alt="Generated plot" width={400} height={300} />}
-              
-              {!isLoading && !output && !imageOutput && (
-                  <div className="flex h-full items-start justify-start text-white/50">
-                  Output will be displayed here.
-                  </div>
+              </ScrollArea>
+              {isAwaitingInput && (
+                <div className="flex items-center gap-2 border-t border-white/10 p-2">
+                  <Input
+                    type="text"
+                    value={interactiveInput}
+                    onChange={(e) => setInteractiveInput(e.target.value)}
+                    onKeyDown={(e) => e.key === 'Enter' && handleInteractiveInput()}
+                    placeholder="Enter input..."
+                    className="flex-grow bg-transparent border-0 focus-visible:ring-0 text-white"
+                    disabled={isLoading}
+                  />
+                  <Button onClick={handleInteractiveInput} disabled={isLoading} size="sm">
+                    {isLoading ? <LoaderCircle className="mr-2 h-4 w-4 animate-spin" /> : <Send className="h-4 w-4" />}
+                    Send
+                  </Button>
+                </div>
               )}
-              
             </div>
           </div>
           <div className="flex flex-col gap-2">
@@ -397,3 +450,5 @@ export function CodeEditor() {
     </>
   );
 }
+
+    

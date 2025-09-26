@@ -100,24 +100,25 @@ export function CodeEditor() {
     const runCodePromise = runCode({ code, language });
     const summarizeCodePromise = summarizeCode({ code, language });
 
-    runCodePromise.then(result => {
-      setOutput(result.output);
-      if (result.image) {
-        setImageOutput(result.image);
-      }
-    }).catch(error => {
-      console.error("Code execution failed:", error);
-      const errorMessage = error instanceof Error ? error.message : "An unexpected error occurred.";
-      toast({
-        variant: "destructive",
-        title: "Execution Error",
-        description: `Could not run code. ${errorMessage}`,
-      });
-      setOutput(`Error: ${errorMessage}`);
-    }).finally(() => {
-      setIsLoading(false);
-    });
-
+    try {
+        const result = await runCodePromise;
+        setOutput(result.output);
+        if (result.image) {
+          setImageOutput(result.image);
+        }
+    } catch (error) {
+        console.error("Code execution failed:", error);
+        const errorMessage = error instanceof Error ? error.message : "An unexpected error occurred.";
+        toast({
+          variant: "destructive",
+          title: "Execution Error",
+          description: `Could not run code. ${errorMessage}`,
+        });
+        setOutput(`Error: ${errorMessage}`);
+    } finally {
+        setIsLoading(false);
+    }
+    
     summarizeCodePromise.then(summaryResult => {
       setHistory(prev => [{ code, language, name: summaryResult.name }, ...prev.slice(0, 49)]);
     }).catch(error => {

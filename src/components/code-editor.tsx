@@ -11,11 +11,9 @@ import { Dialog, DialogContent, DialogHeader, DialogTitle, DialogFooter, DialogC
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from "@/components/ui/select";
 import { Textarea } from "@/components/ui/textarea";
 import { Label } from "@/components/ui/label";
-import { Code, Download, LoaderCircle, Play, Sparkles, Copy, FileText, Trash2, Send } from "lucide-react";
+import { Code, Download, LoaderCircle, Play, Sparkles, Copy, FileText, Trash2 } from "lucide-react";
 import { Input } from '@/components/ui/input';
 import { ThemeToggle } from '@/components/theme-toggle';
-
-const STDIN_PROMPT_MARKER = "[[STDIN_PROMPT]]";
 
 export function CodeEditor() {
   const [code, setCode] = useState('');
@@ -33,11 +31,6 @@ export function CodeEditor() {
   const textareaRef = useRef<HTMLTextAreaElement>(null);
   const lineNumbersRef = useRef<HTMLDivElement>(null);
 
-  const [interactiveSessionId, setInteractiveSessionId] = useState<string | undefined>(undefined);
-  const [isAwaitingInput, setIsAwaitingInput] = useState(false);
-  const [stdinPrompt, setStdinPrompt] = useState('');
-  const [stdin, setStdin] = useState('');
-
   useEffect(() => {
     const lines = code.split('\n').length;
     setLineCount(lines);
@@ -51,47 +44,24 @@ export function CodeEditor() {
   
   const selectedLanguage = useMemo(() => languages.find(l => l.value === language) || languages[0], [language]);
 
-  const handleRunCode = useCallback(async (providedInput?: string) => {
-    const isNewExecution = providedInput === undefined;
-    if (isNewExecution) {
-      if (code.trim() === '') {
-        setOutput('');
-        setImageOutput('');
-        return;
-      }
+  const handleRunCode = useCallback(async () => {
+    if (code.trim() === '') {
       setOutput('');
       setImageOutput('');
-      setInteractiveSessionId(undefined);
+      return;
     }
-
     setIsLoading(true);
-    setIsAwaitingInput(false);
-    setStdinPrompt('');
-    
+    setOutput('');
+    setImageOutput('');
     try {
       const result: RunCodeOutput = await runCode({
         code,
         language,
-        input: providedInput,
-        sessionId: interactiveSessionId,
       });
-
-      if (result.output.startsWith(STDIN_PROMPT_MARKER)) {
-        setIsAwaitingInput(true);
-        setStdinPrompt(result.output.replace(STDIN_PROMPT_MARKER, ''));
-        setInteractiveSessionId(result.sessionId);
-        setOutput(prev => prev + result.output.replace(STDIN_PROMPT_MARKER, ''));
-      } else {
-        let newOutput = result.output;
-        setOutput(prev => prev + newOutput);
-        setInteractiveSessionId(undefined);
-        setIsAwaitingInput(false);
-      }
-      
+      setOutput(result.output);
       if (result.image) {
         setImageOutput(result.image);
       }
-
     } catch (error) {
       console.error("Code execution failed:", error);
       const errorMessage = error instanceof Error ? error.message : "An unexpected error occurred.";
@@ -100,20 +70,11 @@ export function CodeEditor() {
         title: "Execution Error",
         description: `Could not run code. ${errorMessage}`,
       });
-      setOutput(prev => prev + `Error: ${errorMessage}`);
-      setInteractiveSessionId(undefined);
-      setIsAwaitingInput(false);
+      setOutput(`Error: ${errorMessage}`);
     } finally {
       setIsLoading(false);
     }
-  }, [code, language, toast, interactiveSessionId]);
-
-  const handleStdinSubmit = () => {
-    if (stdin.trim() === '' || !isAwaitingInput) return;
-    setOutput(prev => prev + stdin + '\n');
-    handleRunCode(stdin);
-    setStdin('');
-  };
+  }, [code, language, toast]);
 
   const handleGenerateCode = async () => {
     if (aiPrompt.trim() === '') return;
@@ -193,10 +154,6 @@ a.href = url;
     setCode('');
     setOutput('');
     setImageOutput('');
-    setInteractiveSessionId(undefined);
-    setIsAwaitingInput(false);
-    setStdinPrompt('');
-    setStdin('');
   }
 
   return (
@@ -221,7 +178,7 @@ a.href = url;
           <Button variant="outline" size="sm" onClick={handleDownload}><Download className="mr-2" /> Download</Button>
           <Button variant="outline" size="sm" onClick={handleClearCode}><Trash2 className="mr-2" /> Clear</Button>
           <Button size="sm" onClick={() => handleRunCode()} disabled={isLoading || isGenerating}>
-            {isLoading && !isAwaitingInput ? <LoaderCircle className="mr-2 h-4 w-4 animate-spin" /> : <Play className="mr-2 h-4 w-4" />}
+            {isLoading ? <LoaderCircle className="mr-2 h-4 w-4 animate-spin" /> : <Play className="mr-2 h-4 w-4" />}
             Compile & Run
           </Button>
           <Dialog open={isAiDialogOpen} onOpenChange={setIsAiDialogOpen}>
@@ -286,39 +243,22 @@ a.href = url;
         
         <div className="flex flex-col gap-2 flex-grow basis-0">
           <h2 className="text-lg font-semibold tracking-tight">Output</h2>
-          <div id="code-output" className="relative flex-grow min-h-[150px] overflow-auto rounded-lg border border-border/60 bg-zinc-900/50 dark:bg-zinc-900/80 p-4 font-code text-sm flex flex-col">
-            <div className="flex-grow">
-              {isLoading && !isAwaitingInput ? (
-                <div className="absolute inset-0 z-10 flex flex-col items-center justify-center bg-background/80 backdrop-blur-sm">
-                  <LoaderCircle className="h-8 w-8 animate-spin text-primary" />
-                  <p className="mt-2 text-sm text-muted-foreground">Running code...</p>
-                </div>
-              ): null}
-              
-              {imageOutput && <Image src={imageOutput} alt="Generated plot" width={400} height={300} />}
-              <pre className="whitespace-pre-wrap break-words"><code className={output.includes('Error:') ? 'text-destructive' : ''}>{output}</code></pre>
-
-              {!isLoading && !output && !imageOutput && !isAwaitingInput && (
-                <div className="flex h-full items-start justify-start text-muted-foreground">
-                  Output will be displayed here.
-                </div>
-              )}
-            </div>
-             {isAwaitingInput && (
-              <div className="flex items-center mt-2 gap-2">
-                <Input
-                  type="text"
-                  value={stdin}
-                  onChange={(e) => setStdin(e.target.value)}
-                  onKeyDown={(e) => e.key === 'Enter' && handleStdinSubmit()}
-                  placeholder="Enter input..."
-                  className="bg-background/80 flex-grow"
-                  autoFocus
-                />
-                <Button onClick={handleStdinSubmit} size="sm" disabled={isLoading}>
-                  <Send className="mr-2" /> Submit
-                </Button>
+          <div id="code-output" className="relative flex-grow min-h-[150px] overflow-auto rounded-lg border border-border/60 bg-zinc-900/50 dark:bg-zinc-900/80 p-4 font-code text-sm">
+            {isLoading ? (
+              <div className="absolute inset-0 z-10 flex flex-col items-center justify-center bg-background/80 backdrop-blur-sm">
+                <LoaderCircle className="h-8 w-8 animate-spin text-primary" />
+                <p className="mt-2 text-sm text-muted-foreground">Running code...</p>
               </div>
+            ): (
+              <>
+                {imageOutput && <Image src={imageOutput} alt="Generated plot" width={400} height={300} />}
+                <pre className="whitespace-pre-wrap break-words"><code className={output.includes('Error:') ? 'text-destructive' : ''}>{output}</code></pre>
+                {!output && !imageOutput && (
+                  <div className="flex h-full items-start justify-start text-muted-foreground">
+                    Output will be displayed here.
+                  </div>
+                )}
+              </>
             )}
           </div>
         </div>

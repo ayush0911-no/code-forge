@@ -5,7 +5,7 @@ import Image from 'next/image';
 import { runCode, RunCodeOutput } from '@/ai/flows/run-code';
 import { generateCode } from '@/ai/flows/generate-code';
 import { summarizeCode } from '@/ai/flows/summarize-code';
-import { languages, type Language } from '@/lib/languages';
+import { languages, type Language, defaultCode } from '@/lib/languages';
 import { useToast } from "@/hooks/use-toast";
 import { Button } from "@/components/ui/button";
 import { Dialog, DialogContent, DialogHeader, DialogTitle, DialogFooter, DialogClose, DialogTrigger } from "@/components/ui/dialog";
@@ -51,8 +51,8 @@ const CustomDownloadIcon = (props: React.SVGProps<SVGSVGElement>) => (
 
 
 export function CodeEditor() {
-  const [code, setCode] = useState('');
   const [language, setLanguage] = useState(languages[0].value);
+  const [code, setCode] = useState(defaultCode[language] || '');
   const [output, setOutput] = useState('');
   const [isLoading, setIsLoading] = useState(false);
   const [isGenerating, setIsGenerating] = useState(false);
@@ -86,6 +86,13 @@ export function CodeEditor() {
   };
   
   const selectedLanguage = useMemo(() => languages.find(l => l.value === language) || languages[0], [language]);
+
+  const handleLanguageChange = (newLanguage: string) => {
+    setLanguage(newLanguage);
+    if (code.trim() === '' || code === defaultCode[language]) {
+      setCode(defaultCode[newLanguage] || '');
+    }
+  };
 
   const handleRunCode = useCallback(async () => {
     if (code.trim() === '') {
@@ -265,7 +272,7 @@ export function CodeEditor() {
               </DialogFooter>
             </DialogContent>
           </Dialog>
-          <Select value={language} onValueChange={setLanguage}>
+          <Select value={language} onValueChange={handleLanguageChange}>
             <SelectTrigger className="w-[120px] h-9 text-sm">
               <SelectValue placeholder="Select language" />
             </SelectTrigger>

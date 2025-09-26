@@ -236,7 +236,7 @@ export function CodeEditor() {
     const url = URL.createObjectURL(blob);
     const a = document.createElement('a');
     a.href = url;
-    a.download = `CodeForge_file.${selectedLanguage.extension}`;
+    a.download = `CodeForge.${selectedLanguage.extension}`;
     document.body.appendChild(a);
     a.click();
     document.body.removeChild(a);
@@ -371,7 +371,7 @@ export function CodeEditor() {
       <main className="flex-1 grid grid-cols-1 p-4 md:p-6 gap-6">
         <div className="flex flex-col gap-2 min-h-[40vh]">
           <h2 className="text-lg font-semibold tracking-tight text-foreground">Code Editor</h2>
-          <Card className="flex-grow relative overflow-hidden">
+          <Card className="flex-grow relative overflow-hidden bg-card text-card-foreground">
             <div ref={lineNumbersRef} className="absolute left-0 top-0 h-full overflow-hidden bg-muted/30 text-right pr-2 pt-2 select-none text-muted-foreground font-code text-sm" style={{ width: '40px' }}>
               {Array.from({ length: lineCount }, (_, i) => i + 1).map(i => <div key={i}>{i}</div>)}
             </div>
@@ -391,7 +391,7 @@ export function CodeEditor() {
         
         <div className="flex flex-col gap-2 min-h-[30vh]">
             <h2 className="text-lg font-semibold tracking-tight text-foreground">Output</h2>
-            <Card className="relative flex-grow flex flex-col min-h-[150px] text-foreground">
+            <Card className="relative flex-grow flex flex-col min-h-[150px] bg-card text-card-foreground">
               <ScrollArea className="flex-grow p-4">
                 <div id="code-output" ref={outputRef} className="font-code text-sm h-full">
                   {isLoading && !isAwaitingInput ? (
@@ -400,7 +400,7 @@ export function CodeEditor() {
                       <p className="mt-2 text-sm text-muted-foreground">Running code...</p>
                     </div>
                   ) : null}
-                  <pre className="whitespace-pre-wrap break-words"><code className={output.includes('Error:') ? 'text-destructive' : ''}>{output}</code></pre>
+                  <pre className="whitespace-pre-wrap break-words"><code className={output.includes('Error:') ? 'text-destructive' : 'text-foreground'}>{output}</code></pre>
                   {imageOutput && <Image src={imageOutput} alt="Generated plot" width={400} height={300} />}
                   
                   {!isLoading && !output && !imageOutput && !isAwaitingInput && (
@@ -460,3 +460,5 @@ export function CodeEditor() {
     </>
   );
 }
+
+    

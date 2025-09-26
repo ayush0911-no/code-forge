@@ -16,23 +16,28 @@ import { Input } from '@/components/ui/input';
 import { ThemeToggle } from '@/components/theme-toggle';
 
 const CustomDownloadIcon = (props: React.SVGProps<SVGSVGElement>) => (
-  <svg
-    xmlns="http://www.w3.org/2000/svg"
-    width="24"
-    height="24"
-    viewBox="0 0 24 24"
-    {...props}
-  >
-    <path
-      fill="#4285F4"
-      d="M14 2H6C4.9 2 4 2.9 4 4V20C4 21.1 4.9 22 6 22H18C19.1 22 20 21.1 20 20V8L14 2Z"
-    />
-    <path fill="#FFFFFF" d="M13 3.5V9H18.5L13 3.5Z" opacity="0.3" />
-    <path fill="#212121" d="M12 19C14.21 19 16 17.21 16 15C16 12.79 14.21 11 12 11S8 12.79 8 15C8 17.21 9.79 19 12 19Z" opacity="0.8"/>
-    <path fill="#FFFFFF" d="M12.5 13H11.5V15.5L10.21 14.21L9.5 14.92L12 17.41L14.5 14.92L13.79 14.21L12.5 15.5V13Z" />
-    <path fill="#FFFFFF" d="M9.4 12L8 13.4L9.4 14.8L10.8 13.4L9.4 12Z" />
-    <path fill="#FFFFFF" d="M14.6 12L13.2 13.4L14.6 14.8L16 13.4L14.6 12Z" />
-  </svg>
+    <svg
+      width="24"
+      height="24"
+      viewBox="0 0 24 24"
+      fill="none"
+      xmlns="http://www.w3.org/2000/svg"
+      {...props}
+    >
+      <path
+        d="M14 2H6C4.9 2 4 2.9 4 4V20C4 21.1 4.9 22 6 22H18C19.1 22 20 21.1 20 20V8L14 2Z"
+        fill="#FFDDC5"
+      ></path>
+      <path d="M20 8H14C13.4 8 13 7.6 13 7V2L20 8Z" fill="#F9A465"></path>
+      <path
+        d="M12 19C14.2091 19 16 17.2091 16 15C16 12.7909 14.2091 11 12 11C9.79086 11 8 12.7909 8 15C8 17.2091 9.79086 19 12 19Z"
+        fill="#4285F4"
+      ></path>
+      <path
+        d="M12.5 13H11.5V15.5L10.2071 14.2071L9.5 14.9142L12 17.4142L14.5 14.9142L13.7929 14.2071L12.5 15.5V13Z"
+        fill="white"
+      ></path>
+    </svg>
 );
 
 
@@ -247,10 +252,18 @@ a.href = url;
 
   return (
     <>
-      <header className="flex h-16 shrink-0 items-center justify-between border-b border-border/60 bg-background px-4 md:px-6">
+    <div
+        className="absolute inset-0 -z-10 h-full w-full bg-cover bg-center"
+        style={{
+          backgroundImage: "url('https://images.unsplash.com/photo-1542401886-65d6c61db217?q=80&w=2070&auto=format&fit=crop&ixlib=rb-4.0.3&ixid=M3wxMjA3fDB8MHxwaG90by1wYWdlfHx8fGVufDB8fHx8fA%3D%3D')",
+        }}
+    >
+      <div className="absolute inset-0 bg-black/50 backdrop-blur-sm" />
+    </div>
+      <header className="flex h-16 shrink-0 items-center justify-between border-b border-white/10 bg-black/30 px-4 md:px-6">
         <div className="flex items-center gap-3">
           <Code className="h-7 w-7 text-primary" />
-          <h1 className="text-xl font-bold tracking-tighter font-headline">CodeForge</h1>
+          <h1 className="text-xl font-bold tracking-tighter font-headline text-white">CodeForge</h1>
         </div>
         <div className="flex items-center gap-2 md:gap-4">
           <Dialog open={isAiDialogOpen} onOpenChange={setIsAiDialogOpen}>
@@ -311,9 +324,9 @@ a.href = url;
       
       <main className="flex-1 flex flex-col p-4 md:p-6 gap-6">
         <div className="flex flex-col gap-2 flex-grow-[2] basis-0">
-          <h2 className="text-lg font-semibold tracking-tight">Code Editor</h2>
-          <div className="flex-grow relative border border-border/60 rounded-lg overflow-hidden">
-            <div ref={lineNumbersRef} className="absolute left-0 top-0 h-full overflow-hidden bg-secondary text-right pr-2 pt-2 select-none text-muted-foreground font-code text-sm" style={{ width: '40px' }}>
+          <h2 className="text-lg font-semibold tracking-tight text-white">Code Editor</h2>
+          <div className="flex-grow relative border border-white/10 rounded-lg overflow-hidden bg-black/30">
+            <div ref={lineNumbersRef} className="absolute left-0 top-0 h-full overflow-hidden bg-black/20 text-right pr-2 pt-2 select-none text-white/50 font-code text-sm" style={{ width: '40px' }}>
               {Array.from({ length: lineCount }, (_, i) => i + 1).map(i => <div key={i}>{i}</div>)}
             </div>
             <Textarea
@@ -323,7 +336,7 @@ a.href = url;
               value={code}
               onChange={(e) => setCode(e.target.value)}
               onScroll={handleTextareaScroll}
-              className="absolute inset-0 w-full h-full font-code text-sm resize-none bg-transparent border-0 focus-visible:ring-0 focus-visible:ring-offset-0"
+              className="absolute inset-0 w-full h-full font-code text-sm resize-none bg-transparent border-0 focus-visible:ring-0 focus-visible:ring-offset-0 text-white"
               style={{ paddingLeft: '50px' }}
               spellCheck="false"
             />
@@ -331,12 +344,12 @@ a.href = url;
         </div>
         
         <div className="flex flex-col gap-2 flex-grow basis-0">
-          <h2 className="text-lg font-semibold tracking-tight">Output</h2>
-          <div id="code-output" ref={outputRef} className="relative flex-grow min-h-[150px] overflow-auto rounded-lg border border-border/60 bg-secondary dark:bg-zinc-900/80 p-4 font-code text-sm">
+          <h2 className="text-lg font-semibold tracking-tight text-white">Output</h2>
+          <div id="code-output" ref={outputRef} className="relative flex-grow min-h-[150px] overflow-auto rounded-lg border border-white/10 bg-black/30 p-4 font-code text-sm text-white">
             {isLoading && !isInteractive ? (
-              <div className="absolute inset-0 z-10 flex flex-col items-center justify-center bg-background/80 backdrop-blur-sm">
+              <div className="absolute inset-0 z-10 flex flex-col items-center justify-center bg-black/50 backdrop-blur-sm">
                 <LoaderCircle className="h-8 w-8 animate-spin text-primary" />
-                <p className="mt-2 text-sm text-muted-foreground">Running code...</p>
+                <p className="mt-2 text-sm text-white/70">Running code...</p>
               </div>
             ) : null}
             <pre className="whitespace-pre-wrap break-words"><code className={sessionHistory.includes('Error:') ? 'text-destructive' : ''}>{sessionHistory}</code></pre>
@@ -357,7 +370,7 @@ a.href = url;
             {imageOutput && <Image src={imageOutput} alt="Generated plot" width={400} height={300} />}
             
             {!isLoading && !sessionHistory && !imageOutput && !isInteractive && (
-                <div className="flex h-full items-start justify-start text-muted-foreground">
+                <div className="flex h-full items-start justify-start text-white/50">
                 Output will be displayed here.
                 </div>
             )}

@@ -62,6 +62,7 @@ export function CodeEditor() {
   const [isAnswer, setIsAnswer] = useState(false);
   const [imageOutput, setImageOutput] = useState('');
   const [isAiDialogOpen, setIsAiDialogOpen] = useState(false);
+  const [isHistoryDialogOpen, setIsHistoryDialogOpen] = useState(false);
   const [lineCount, setLineCount] = useState(1);
   const [history, setHistory] = useState<HistoryItem[]>([]);
   const textareaRef = useRef<HTMLTextAreaElement>(null);
@@ -251,6 +252,7 @@ export function CodeEditor() {
   const handleRestoreHistory = (item: HistoryItem) => {
     setCode(item.code);
     setLanguage(item.language);
+    setIsHistoryDialogOpen(false);
   };
 
   return (
@@ -305,6 +307,47 @@ export function CodeEditor() {
               </DialogFooter>
             </DialogContent>
           </Dialog>
+
+          <Dialog open={isHistoryDialogOpen} onOpenChange={setIsHistoryDialogOpen}>
+            <DialogTrigger asChild>
+                <Button variant="outline"><History className="mr-2 h-4 w-4" />History</Button>
+            </DialogTrigger>
+            <DialogContent className="max-w-2xl">
+              <DialogHeader>
+                <DialogTitle>Code History</DialogTitle>
+              </DialogHeader>
+                <div className="flex items-center justify-end">
+                    <Button variant="outline" size="sm" onClick={() => setHistory([])} disabled={history.length === 0}><Trash2 className="mr-2"/> Clear History</Button>
+                </div>
+                <div id="code-history" className="relative flex-grow min-h-[300px] max-h-[60vh] overflow-auto rounded-lg border bg-secondary/30 text-white">
+                    <ScrollArea className="h-full">
+                    {history.length === 0 ? (
+                        <div className="flex h-full items-center justify-center text-white/50 p-4">
+                            Your code execution history will appear here.
+                        </div>
+                    ) : (
+                        <div className='p-4 space-y-2'>
+                        {history.map((item, index) => (
+                            <Card key={index} className='bg-black/20 border-white/10'>
+                                <CardContent className='p-3 flex items-center justify-between'>
+                                    <div className='w-full pr-2'>
+                                      <div className="font-semibold text-sm capitalize">{item.name}</div>
+                                      <div className="text-xs text-white/60">{languages.find(l => l.value === item.language)?.label}</div>
+                                    </div>
+                                    <Button size="icon" variant="ghost" onClick={() => handleRestoreHistory(item)}>
+                                        <RotateCcw className='h-4 w-4' />
+                                    </Button>
+                                </CardContent>
+                            </Card>
+                        ))}
+                        </div>
+                    )}
+                    </ScrollArea>
+                </div>
+            </DialogContent>
+          </Dialog>
+
+
           <Select value={language} onValueChange={handleLanguageChange}>
             <SelectTrigger className="w-[120px] h-9 text-sm">
               <SelectValue placeholder="Select language" />
@@ -335,7 +378,7 @@ export function CodeEditor() {
             <Textarea
               ref={textareaRef}
               id="code-input"
-              placeholder={`# Start writing your ${selectedLanguage.label} code here...`}
+              placeholder="# Start writing your code here..."
               value={code}
               onChange={(e) => setCode(e.target.value)}
               onScroll={handleTextareaScroll}
@@ -346,8 +389,7 @@ export function CodeEditor() {
           </div>
         </div>
         
-        <div className="grid grid-rows-2 gap-6">
-          <div className="flex flex-col gap-2">
+        <div className="flex flex-col gap-2">
             <h2 className="text-lg font-semibold tracking-tight text-white">Output</h2>
             <div className="relative flex-grow flex flex-col min-h-[150px] rounded-lg border border-white/10 bg-black/30 text-white">
               <ScrollArea className="flex-grow p-4">
@@ -387,38 +429,6 @@ export function CodeEditor() {
               )}
             </div>
           </div>
-          <div className="flex flex-col gap-2">
-            <div className='flex items-center justify-between'>
-                <h2 className="text-lg font-semibold tracking-tight text-white">History</h2>
-                <Button variant="outline" size="sm" onClick={() => setHistory([])} disabled={history.length === 0}><Trash2 className="mr-2"/> Clear History</Button>
-            </div>
-            <div id="code-history" className="relative flex-grow min-h-[150px] overflow-auto rounded-lg border border-white/10 bg-black/30 text-white">
-                <ScrollArea className="h-full">
-                {history.length === 0 ? (
-                    <div className="flex h-full items-center justify-center text-white/50 p-4">
-                        Your code execution history will appear here.
-                    </div>
-                ) : (
-                    <div className='p-4 space-y-2'>
-                    {history.map((item, index) => (
-                        <Card key={index} className='bg-black/20 border-white/10'>
-                            <CardContent className='p-3 flex items-center justify-between'>
-                                <div className='w-full pr-2'>
-                                  <div className="font-semibold text-sm capitalize">{item.name}</div>
-                                  <div className="text-xs text-white/60">{languages.find(l => l.value === item.language)?.label}</div>
-                                </div>
-                                <Button size="icon" variant="ghost" onClick={() => handleRestoreHistory(item)}>
-                                    <RotateCcw className='h-4 w-4' />
-                                </Button>
-                            </CardContent>
-                        </Card>
-                    ))}
-                    </div>
-                )}
-                </ScrollArea>
-            </div>
-          </div>
-        </div>
       </main>
 
       <Dialog open={!!generatedContent} onOpenChange={(isOpen) => !isOpen && handleDeclineSuggestion()}>
@@ -450,5 +460,3 @@ export function CodeEditor() {
     </>
   );
 }
-
-    

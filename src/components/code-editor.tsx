@@ -15,6 +15,27 @@ import { Code, Download, LoaderCircle, Play, Sparkles, Copy, FileText, Trash2 } 
 import { Input } from '@/components/ui/input';
 import { ThemeToggle } from '@/components/theme-toggle';
 
+const CustomDownloadIcon = (props: React.SVGProps<SVGSVGElement>) => (
+  <svg
+    xmlns="http://www.w3.org/2000/svg"
+    width="24"
+    height="24"
+    viewBox="0 0 24 24"
+    {...props}
+  >
+    <path
+      fill="#4285F4"
+      d="M14 2H6C4.9 2 4 2.9 4 4V20C4 21.1 4.9 22 6 22H18C19.1 22 20 21.1 20 20V8L14 2Z"
+    />
+    <path fill="#FFFFFF" d="M13 3.5V9H18.5L13 3.5Z" opacity="0.3" />
+    <path fill="#212121" d="M12 19C14.21 19 16 17.21 16 15C16 12.79 14.21 11 12 11S8 12.79 8 15C8 17.21 9.79 19 12 19Z" opacity="0.8"/>
+    <path fill="#FFFFFF" d="M12.5 13H11.5V15.5L10.21 14.21L9.5 14.92L12 17.41L14.5 14.92L13.79 14.21L12.5 15.5V13Z" />
+    <path fill="#FFFFFF" d="M9.4 12L8 13.4L9.4 14.8L10.8 13.4L9.4 12Z" />
+    <path fill="#FFFFFF" d="M14.6 12L13.2 13.4L14.6 14.8L16 13.4L14.6 12Z" />
+  </svg>
+);
+
+
 export function CodeEditor() {
   const [code, setCode] = useState('');
   const [language, setLanguage] = useState(languages[0].value);
@@ -175,7 +196,7 @@ a.href = url;
             </SelectContent>
           </Select>
           <ThemeToggle />
-          <Button variant="outline" size="sm" onClick={handleDownload}><Download className="mr-2" /> Download</Button>
+          <Button variant="outline" size="sm" onClick={handleDownload}><CustomDownloadIcon className="mr-2" /> Download</Button>
           <Button variant="outline" size="sm" onClick={handleClearCode}><Trash2 className="mr-2" /> Clear</Button>
           <Button size="sm" onClick={() => handleRunCode()} disabled={isLoading || isGenerating}>
             {isLoading ? <LoaderCircle className="mr-2 h-4 w-4 animate-spin" /> : <Play className="mr-2 h-4 w-4" />}

@@ -368,8 +368,8 @@ export function CodeEditor() {
         </div>
       </header>
       
-      <main className="flex-1 grid grid-cols-1 md:grid-cols-2 p-4 md:p-6 gap-6">
-        <div className="flex flex-col gap-2">
+      <main className="flex-1 grid grid-cols-1 p-4 md:p-6 gap-6">
+        <div className="flex flex-col gap-2 min-h-[40vh]">
           <h2 className="text-lg font-semibold tracking-tight text-white">Code Editor</h2>
           <div className="flex-grow relative border border-white/10 rounded-lg overflow-hidden bg-black/30">
             <div ref={lineNumbersRef} className="absolute left-0 top-0 h-full overflow-hidden bg-black/20 text-right pr-2 pt-2 select-none text-white/50 font-code text-sm" style={{ width: '40px' }}>
@@ -389,7 +389,7 @@ export function CodeEditor() {
           </div>
         </div>
         
-        <div className="flex flex-col gap-2">
+        <div className="flex flex-col gap-2 min-h-[30vh]">
             <h2 className="text-lg font-semibold tracking-tight text-white">Output</h2>
             <div className="relative flex-grow flex flex-col min-h-[150px] rounded-lg border border-white/10 bg-black/30 text-white">
               <ScrollArea className="flex-grow p-4">
@@ -460,3 +460,5 @@ export function CodeEditor() {
     </>
   );
 }
+
+    

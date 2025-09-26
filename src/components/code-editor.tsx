@@ -96,29 +96,16 @@ export function CodeEditor() {
     setIsLoading(true);
     setOutput('');
     setImageOutput('');
-    
-    let summary = 'Untitled';
-    try {
-      const summaryResult = await summarizeCode({ code, language });
-      summary = summaryResult.name;
-    } catch (error) {
-      console.error("Code summarization failed:", error);
-      // We can proceed without a summary, it will be 'Untitled'
-    }
-    setHistory(prev => [{ code, language, name: summary }, ...prev.slice(0, 49)]);
 
-    try {
-      const result: RunCodeOutput = await runCode({
-        code,
-        language,
-      });
+    const runCodePromise = runCode({ code, language });
+    const summarizeCodePromise = summarizeCode({ code, language });
+
+    runCodePromise.then(result => {
       setOutput(result.output);
-
       if (result.image) {
         setImageOutput(result.image);
       }
-
-    } catch (error) {
+    }).catch(error => {
       console.error("Code execution failed:", error);
       const errorMessage = error instanceof Error ? error.message : "An unexpected error occurred.";
       toast({
@@ -127,9 +114,17 @@ export function CodeEditor() {
         description: `Could not run code. ${errorMessage}`,
       });
       setOutput(`Error: ${errorMessage}`);
-    } finally {
+    }).finally(() => {
       setIsLoading(false);
-    }
+    });
+
+    summarizeCodePromise.then(summaryResult => {
+      setHistory(prev => [{ code, language, name: summaryResult.name }, ...prev.slice(0, 49)]);
+    }).catch(error => {
+      console.error("Code summarization failed:", error);
+      setHistory(prev => [{ code, language, name: 'Untitled' }, ...prev.slice(0, 49)]);
+    });
+
   }, [code, language, toast]);
 
   const handleGenerateCode = async () => {

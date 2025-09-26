@@ -4,6 +4,7 @@ import { useState, useCallback, useMemo, useRef, useEffect } from 'react';
 import Image from 'next/image';
 import { runCode, RunCodeOutput } from '@/ai/flows/run-code';
 import { generateCode } from '@/ai/flows/generate-code';
+import { summarizeCode } from '@/ai/flows/summarize-code';
 import { languages, type Language } from '@/lib/languages';
 import { useToast } from "@/hooks/use-toast";
 import { Button } from "@/components/ui/button";
@@ -20,6 +21,7 @@ import { ScrollArea } from '@/components/ui/scroll-area';
 type HistoryItem = {
   code: string;
   language: string;
+  name: string;
 };
 
 const CustomDownloadIcon = (props: React.SVGProps<SVGSVGElement>) => (
@@ -94,7 +96,16 @@ export function CodeEditor() {
     setIsLoading(true);
     setOutput('');
     setImageOutput('');
-    setHistory(prev => [{code, language}, ...prev.slice(0, 49)]);
+    
+    let summary = 'Untitled';
+    try {
+      const summaryResult = await summarizeCode({ code, language });
+      summary = summaryResult.name;
+    } catch (error) {
+      console.error("Code summarization failed:", error);
+      // We can proceed without a summary, it will be 'Untitled'
+    }
+    setHistory(prev => [{ code, language, name: summary }, ...prev.slice(0, 49)]);
 
     try {
       const result: RunCodeOutput = await runCode({
@@ -336,9 +347,10 @@ export function CodeEditor() {
                     {history.map((item, index) => (
                         <Card key={index} className='bg-black/20 border-white/10'>
                             <CardContent className='p-3 flex items-center justify-between'>
-                                <pre className="whitespace-pre-wrap break-words font-code text-sm w-full pr-2">
-                                    <code className='line-clamp-2'>{item.code}</code>
-                                </pre>
+                                <div className='w-full pr-2'>
+                                  <div className="font-semibold text-sm capitalize">{item.name}</div>
+                                  <div className="text-xs text-white/60">{languages.find(l => l.value === item.language)?.label}</div>
+                                </div>
                                 <Button size="icon" variant="ghost" onClick={() => handleRestoreHistory(item)}>
                                     <RotateCcw className='h-4 w-4' />
                                 </Button>

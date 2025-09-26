@@ -22,8 +22,6 @@ export function CodeEditor() {
   const [isLoading, setIsLoading] = useState(false);
   const [isGenerating, setIsGenerating] = useState(false);
   const { toast } = useToast();
-  const [userInput, setUserInput] = useState('');
-  const [isAwaitingInput, setIsAwaitingInput] = useState(false);
   const [aiPrompt, setAiPrompt] = useState('');
   const [generatedContent, setGeneratedContent] = useState('');
   const [isAnswer, setIsAnswer] = useState(false);
@@ -32,7 +30,6 @@ export function CodeEditor() {
   const [lineCount, setLineCount] = useState(1);
   const textareaRef = useRef<HTMLTextAreaElement>(null);
   const lineNumbersRef = useRef<HTMLDivElement>(null);
-  const [interactiveSession, setInteractiveSession] = useState<{ originalCode: string; remainingCode: string } | null>(null);
 
   useEffect(() => {
     const lines = code.split('\n').length;
@@ -54,19 +51,11 @@ export function CodeEditor() {
       return;
     }
     setIsLoading(true);
-    setIsAwaitingInput(false);
     setOutput('');
     setImageOutput('');
-    setInteractiveSession({ originalCode: code, remainingCode: code });
-
-    await runCodeSegment(code);
-  }, [code, language, toast]);
-
-  const runCodeSegment = async (codeToRun: string) => {
-    setIsLoading(true);
     try {
       const result: RunCodeOutput = await runCode({
-        code: codeToRun,
+        code,
         language,
       });
 
@@ -76,17 +65,7 @@ export function CodeEditor() {
       
       let newOutput = result.output;
       
-      const inputPromptIndex = newOutput.search(/<input_prompt>/);
-
-      if (inputPromptIndex !== -1) {
-        const promptText = newOutput.substring(0, inputPromptIndex);
-        setOutput(prev => prev + promptText);
-        setIsAwaitingInput(true);
-      } else {
-        setOutput(prev => prev + newOutput);
-        setIsAwaitingInput(false);
-        setInteractiveSession(null);
-      }
+      setOutput(newOutput);
     } catch (error) {
       console.error("Code execution failed:", error);
       const errorMessage = error instanceof Error ? error.message : "An unexpected error occurred.";
@@ -95,13 +74,11 @@ export function CodeEditor() {
         title: "Execution Error",
         description: `Could not run code. ${errorMessage}`,
       });
-      setOutput(prev => `${prev}\nError: ${errorMessage}`);
-      setInteractiveSession(null);
+      setOutput(`Error: ${errorMessage}`);
     } finally {
       setIsLoading(false);
     }
-  };
-
+  }, [code, language, toast]);
 
   const handleGenerateCode = async () => {
     if (aiPrompt.trim() === '') return;
@@ -181,23 +158,7 @@ a.href = url;
     setCode('');
     setOutput('');
     setImageOutput('');
-    setInteractiveSession(null);
-    setIsAwaitingInput(false);
   }
-  
-  const handleInputSubmit = async (e: React.FormEvent<HTMLFormElement>) => {
-    e.preventDefault();
-    if (isAwaitingInput && interactiveSession) {
-      setOutput(prev => prev + userInput + '\n');
-      setIsAwaitingInput(false);
-
-      const codeWithInput = `__user_input__ = """${userInput}"""\n` + interactiveSession.remainingCode;
-
-      await runCodeSegment(codeWithInput);
-
-      setUserInput('');
-    }
-  };
 
   return (
     <>
@@ -221,7 +182,7 @@ a.href = url;
           <Button variant="outline" size="sm" onClick={handleDownload}><Download className="mr-2" /> Download</Button>
           <Button variant="outline" size="sm" onClick={handleClearCode}><Trash2 className="mr-2" /> Clear</Button>
           <Button size="sm" onClick={handleRunCode} disabled={isLoading || isGenerating}>
-            {isLoading && !isAwaitingInput ? <LoaderCircle className="mr-2 h-4 w-4 animate-spin" /> : <Play className="mr-2 h-4 w-4" />}
+            {isLoading ? <LoaderCircle className="mr-2 h-4 w-4 animate-spin" /> : <Play className="mr-2 h-4 w-4" />}
             Compile & Run
           </Button>
           <Dialog open={isAiDialogOpen} onOpenChange={setIsAiDialogOpen}>
@@ -287,7 +248,7 @@ a.href = url;
         <div className="flex flex-col gap-2 flex-grow basis-0">
           <h2 className="text-lg font-semibold tracking-tight">Output</h2>
           <div id="code-output" className="relative flex-grow min-h-[150px] overflow-auto rounded-lg border border-border/60 bg-zinc-900/50 dark:bg-zinc-900/80 p-4 font-code text-sm">
-            {(isLoading && !isAwaitingInput) || (isGenerating && !generatedContent) ? (
+            {isLoading || (isGenerating && !generatedContent) ? (
               <div className="absolute inset-0 z-10 flex flex-col items-center justify-center bg-background/80 backdrop-blur-sm">
                 <LoaderCircle className="h-8 w-8 animate-spin text-primary" />
                 <p className="mt-2 text-sm text-muted-foreground">{isGenerating ? 'Generating response...' : 'Running code...'}</p>
@@ -296,22 +257,8 @@ a.href = url;
             
             {imageOutput && <Image src={imageOutput} alt="Generated plot" width={400} height={300} />}
             <pre className="whitespace-pre-wrap break-words"><code className={output.includes('Error:') ? 'text-destructive' : ''}>{output}</code></pre>
-            
-            {isAwaitingInput && (
-              <form onSubmit={handleInputSubmit} className="mt-2 flex items-center gap-2">
-                <Input
-                  type="text"
-                  value={userInput}
-                  onChange={(e) => setUserInput(e.target.value)}
-                  placeholder="Enter input and press Enter"
-                  className="flex-grow bg-background/70"
-                  autoFocus
-                />
-                 <Button type="submit" size="sm" disabled={isLoading}>Submit</Button>
-              </form>
-            )}
 
-            {!isLoading && !output && !isAwaitingInput && !imageOutput && (
+            {!isLoading && !output && !imageOutput && (
               <div className="flex h-full items-start justify-start text-muted-foreground">
                 Output will be displayed here.
               </div>

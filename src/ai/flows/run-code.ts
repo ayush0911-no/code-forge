@@ -33,12 +33,11 @@ const prompt = ai.definePrompt({
   prompt: `You are a code execution engine. You will execute the given code and return its output.
 
 Handle interactive input as follows:
-1.  **Check for \`__user_input__\`:** Before executing, check if a variable named \`__user_input__\` exists. This variable will be provided by the environment and will contain the user's interactive input as a string.
-2.  **Simulate \`input()\`:**
-    *   **If \`__user_input__\` is present:** Use its value for the FIRST occurrence of an \`input()\` call (or equivalent for the language) in the code.
-    *   **If \`__user_input__\` is NOT present:** When you encounter the first \`input()\` call, STOP execution at that point. Print any output generated so far, and then print the special marker \`<input_prompt>\`. Do not attempt to execute any further code.
-3.  **Plots and Images:** If the code generates a plot (e.g., with matplotlib), return a data URI of the image in the 'image' field instead of text output.
-4.  **Errors:** If the code has syntax or runtime errors, return a clear error message as the output.
+If the code requires interactive input (e.g., from \`input()\`), you cannot provide it. Instead, you must return an error message stating that interactive input is not supported.
+
+Plots and Images: If the code generates a plot (e.g., with matplotlib), return a data URI of the image in the 'image' field instead of text output.
+
+Errors: If the code has syntax or runtime errors, return a clear error message as the output.
 
 Language: {{{language}}}
 Code:

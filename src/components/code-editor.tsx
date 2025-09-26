@@ -11,9 +11,16 @@ import { Dialog, DialogContent, DialogHeader, DialogTitle, DialogFooter, DialogC
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from "@/components/ui/select";
 import { Textarea } from "@/components/ui/textarea";
 import { Label } from "@/components/ui/label";
-import { Code, Download, LoaderCircle, Play, Sparkles, Copy, FileText, Trash2 } from "lucide-react";
+import { Code, Download, LoaderCircle, Play, Sparkles, Copy, FileText, Trash2, History, RotateCcw } from "lucide-react";
 import { Input } from '@/components/ui/input';
 import { ThemeToggle } from '@/components/theme-toggle';
+import { Card, CardContent, CardHeader, CardTitle } from '@/components/ui/card';
+import { ScrollArea } from '@/components/ui/scroll-area';
+
+type HistoryItem = {
+  code: string;
+  language: string;
+};
 
 const CustomDownloadIcon = (props: React.SVGProps<SVGSVGElement>) => (
     <svg
@@ -54,6 +61,7 @@ export function CodeEditor() {
   const [imageOutput, setImageOutput] = useState('');
   const [isAiDialogOpen, setIsAiDialogOpen] = useState(false);
   const [lineCount, setLineCount] = useState(1);
+  const [history, setHistory] = useState<HistoryItem[]>([]);
   const textareaRef = useRef<HTMLTextAreaElement>(null);
   const lineNumbersRef = useRef<HTMLDivElement>(null);
   const outputRef = useRef<HTMLDivElement>(null);
@@ -86,6 +94,7 @@ export function CodeEditor() {
     setIsLoading(true);
     setOutput('');
     setImageOutput('');
+    setHistory(prev => [{code, language}, ...prev.slice(0, 49)]);
 
     try {
       const result: RunCodeOutput = await runCode({
@@ -192,6 +201,11 @@ export function CodeEditor() {
     setImageOutput('');
   }
 
+  const handleRestoreHistory = (item: HistoryItem) => {
+    setCode(item.code);
+    setLanguage(item.language);
+  };
+
   return (
     <>
     <div
@@ -264,8 +278,8 @@ export function CodeEditor() {
         </div>
       </header>
       
-      <main className="flex-1 flex flex-col p-4 md:p-6 gap-6">
-        <div className="flex flex-col gap-2 flex-grow-[2] basis-0">
+      <main className="flex-1 grid grid-cols-1 md:grid-cols-2 p-4 md:p-6 gap-6">
+        <div className="flex flex-col gap-2">
           <h2 className="text-lg font-semibold tracking-tight text-white">Code Editor</h2>
           <div className="flex-grow relative border border-white/10 rounded-lg overflow-hidden bg-black/30">
             <div ref={lineNumbersRef} className="absolute left-0 top-0 h-full overflow-hidden bg-black/20 text-right pr-2 pt-2 select-none text-white/50 font-code text-sm" style={{ width: '40px' }}>
@@ -285,24 +299,56 @@ export function CodeEditor() {
           </div>
         </div>
         
-        <div className="flex flex-col gap-2 flex-grow basis-0">
-          <h2 className="text-lg font-semibold tracking-tight text-white">Output</h2>
-          <div id="code-output" ref={outputRef} className="relative flex-grow min-h-[150px] overflow-auto rounded-lg border border-white/10 bg-black/30 p-4 font-code text-sm text-white">
-            {isLoading ? (
-              <div className="absolute inset-0 z-10 flex flex-col items-center justify-center bg-black/50 backdrop-blur-sm">
-                <LoaderCircle className="h-8 w-8 animate-spin text-primary" />
-                <p className="mt-2 text-sm text-white/70">Running code...</p>
-              </div>
-            ) : null}
-            <pre className="whitespace-pre-wrap break-words"><code className={output.includes('Error:') ? 'text-destructive' : ''}>{output}</code></pre>
-            {imageOutput && <Image src={imageOutput} alt="Generated plot" width={400} height={300} />}
-            
-            {!isLoading && !output && !imageOutput && (
-                <div className="flex h-full items-start justify-start text-white/50">
-                Output will be displayed here.
+        <div className="grid grid-rows-2 gap-6">
+          <div className="flex flex-col gap-2">
+            <h2 className="text-lg font-semibold tracking-tight text-white">Output</h2>
+            <div id="code-output" ref={outputRef} className="relative flex-grow min-h-[150px] overflow-auto rounded-lg border border-white/10 bg-black/30 p-4 font-code text-sm text-white">
+              {isLoading ? (
+                <div className="absolute inset-0 z-10 flex flex-col items-center justify-center bg-black/50 backdrop-blur-sm">
+                  <LoaderCircle className="h-8 w-8 animate-spin text-primary" />
+                  <p className="mt-2 text-sm text-white/70">Running code...</p>
                 </div>
-            )}
-            
+              ) : null}
+              <pre className="whitespace-pre-wrap break-words"><code className={output.includes('Error:') ? 'text-destructive' : ''}>{output}</code></pre>
+              {imageOutput && <Image src={imageOutput} alt="Generated plot" width={400} height={300} />}
+              
+              {!isLoading && !output && !imageOutput && (
+                  <div className="flex h-full items-start justify-start text-white/50">
+                  Output will be displayed here.
+                  </div>
+              )}
+              
+            </div>
+          </div>
+          <div className="flex flex-col gap-2">
+            <div className='flex items-center justify-between'>
+                <h2 className="text-lg font-semibold tracking-tight text-white">History</h2>
+                <Button variant="outline" size="sm" onClick={() => setHistory([])} disabled={history.length === 0}><Trash2 className="mr-2"/> Clear History</Button>
+            </div>
+            <div id="code-history" className="relative flex-grow min-h-[150px] overflow-auto rounded-lg border border-white/10 bg-black/30 text-white">
+                <ScrollArea className="h-full">
+                {history.length === 0 ? (
+                    <div className="flex h-full items-center justify-center text-white/50 p-4">
+                        Your code execution history will appear here.
+                    </div>
+                ) : (
+                    <div className='p-4 space-y-2'>
+                    {history.map((item, index) => (
+                        <Card key={index} className='bg-black/20 border-white/10'>
+                            <CardContent className='p-3 flex items-center justify-between'>
+                                <pre className="whitespace-pre-wrap break-words font-code text-sm w-full pr-2">
+                                    <code className='line-clamp-2'>{item.code}</code>
+                                </pre>
+                                <Button size="icon" variant="ghost" onClick={() => handleRestoreHistory(item)}>
+                                    <RotateCcw className='h-4 w-4' />
+                                </Button>
+                            </CardContent>
+                        </Card>
+                    ))}
+                    </div>
+                )}
+                </ScrollArea>
+            </div>
           </div>
         </div>
       </main>

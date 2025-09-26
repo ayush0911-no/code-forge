@@ -11,7 +11,7 @@ import { Dialog, DialogContent, DialogHeader, DialogTitle, DialogFooter, DialogC
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from "@/components/ui/select";
 import { Textarea } from "@/components/ui/textarea";
 import { Label } from "@/components/ui/label";
-import { Code, Download, LoaderCircle, Play, Sparkles, Copy, FileText, Trash2 } from "lucide-react";
+import { Code, Download, LoaderCircle, Play, Sparkles, Copy, FileText, Trash2, Terminal } from "lucide-react";
 import { Input } from '@/components/ui/input';
 import { ThemeToggle } from '@/components/theme-toggle';
 
@@ -51,6 +51,16 @@ export function CodeEditor() {
   const [lineCount, setLineCount] = useState(1);
   const textareaRef = useRef<HTMLTextAreaElement>(null);
   const lineNumbersRef = useRef<HTMLDivElement>(null);
+  const [sessionHistory, setSessionHistory] = useState('');
+  const [userInput, setUserInput] = useState('');
+  const [isInteractive, setIsInteractive] = useState(false);
+  const outputRef = useRef<HTMLDivElement>(null);
+
+  useEffect(() => {
+    if (outputRef.current) {
+        outputRef.current.scrollTop = outputRef.current.scrollHeight;
+    }
+  }, [sessionHistory, output, imageOutput, isLoading]);
 
   useEffect(() => {
     const lines = code.split('\n').length;
@@ -69,20 +79,31 @@ export function CodeEditor() {
     if (code.trim() === '') {
       setOutput('');
       setImageOutput('');
+      setSessionHistory('');
+      setIsInteractive(false);
       return;
     }
     setIsLoading(true);
+    setSessionHistory('');
     setOutput('');
     setImageOutput('');
+    setIsInteractive(false);
+
     try {
       const result: RunCodeOutput = await runCode({
         code,
         language,
       });
       setOutput(result.output);
+      setSessionHistory(result.output);
+
       if (result.image) {
         setImageOutput(result.image);
       }
+      if (result.requiresInput) {
+        setIsInteractive(true);
+      }
+
     } catch (error) {
       console.error("Code execution failed:", error);
       const errorMessage = error instanceof Error ? error.message : "An unexpected error occurred.";
@@ -92,10 +113,55 @@ export function CodeEditor() {
         description: `Could not run code. ${errorMessage}`,
       });
       setOutput(`Error: ${errorMessage}`);
+      setSessionHistory(`Error: ${errorMessage}`);
     } finally {
       setIsLoading(false);
     }
   }, [code, language, toast]);
+
+  const handleInteractiveInput = async (e: React.KeyboardEvent<HTMLInputElement>) => {
+    if (e.key === 'Enter') {
+      const currentInput = userInput;
+      const newHistory = sessionHistory + currentInput + '\n';
+      setSessionHistory(newHistory);
+      setUserInput('');
+      setIsInteractive(false);
+      setIsLoading(true);
+      
+      try {
+        const result: RunCodeOutput = await runCode({
+          code,
+          language,
+          input: currentInput
+        });
+        
+        const nextOutput = result.output;
+        setOutput(nextOutput);
+        setSessionHistory(newHistory + nextOutput);
+
+        if (result.image) {
+          setImageOutput(result.image);
+        }
+        if (result.requiresInput) {
+          setIsInteractive(true);
+        }
+      } catch (error) {
+        console.error("Code execution failed:", error);
+        const errorMessage = error instanceof Error ? error.message : "An unexpected error occurred.";
+        const finalHistory = newHistory + `Error: ${errorMessage}`;
+        setSessionHistory(finalHistory);
+        setOutput(`Error: ${errorMessage}`);
+        toast({
+          variant: "destructive",
+          title: "Execution Error",
+          description: `Could not run code. ${errorMessage}`,
+        });
+      } finally {
+        setIsLoading(false);
+      }
+    }
+  };
+
 
   const handleGenerateCode = async () => {
     if (aiPrompt.trim() === '') return;
@@ -175,6 +241,8 @@ a.href = url;
     setCode('');
     setOutput('');
     setImageOutput('');
+    setSessionHistory('');
+    setIsInteractive(false);
   }
 
   return (
@@ -264,23 +332,36 @@ a.href = url;
         
         <div className="flex flex-col gap-2 flex-grow basis-0">
           <h2 className="text-lg font-semibold tracking-tight">Output</h2>
-          <div id="code-output" className="relative flex-grow min-h-[150px] overflow-auto rounded-lg border border-border/60 bg-secondary dark:bg-zinc-900/80 p-4 font-code text-sm">
-            {isLoading ? (
+          <div id="code-output" ref={outputRef} className="relative flex-grow min-h-[150px] overflow-auto rounded-lg border border-border/60 bg-secondary dark:bg-zinc-900/80 p-4 font-code text-sm">
+            {isLoading && !isInteractive ? (
               <div className="absolute inset-0 z-10 flex flex-col items-center justify-center bg-background/80 backdrop-blur-sm">
                 <LoaderCircle className="h-8 w-8 animate-spin text-primary" />
                 <p className="mt-2 text-sm text-muted-foreground">Running code...</p>
               </div>
-            ): (
-              <>
-                {imageOutput && <Image src={imageOutput} alt="Generated plot" width={400} height={300} />}
-                <pre className="whitespace-pre-wrap break-words"><code className={output.includes('Error:') ? 'text-destructive' : ''}>{output}</code></pre>
-                {!output && !imageOutput && (
-                  <div className="flex h-full items-start justify-start text-muted-foreground">
-                    Output will be displayed here.
-                  </div>
-                )}
-              </>
+            ) : null}
+            <pre className="whitespace-pre-wrap break-words"><code className={sessionHistory.includes('Error:') ? 'text-destructive' : ''}>{sessionHistory}</code></pre>
+            {isInteractive && (
+                <div className="flex items-center">
+                    <Terminal className="h-4 w-4 mr-2" />
+                    <Input
+                        type="text"
+                        value={userInput}
+                        onChange={(e) => setUserInput(e.target.value)}
+                        onKeyDown={handleInteractiveInput}
+                        className="flex-grow bg-transparent border-0 focus:ring-0 focus:outline-none"
+                        placeholder="Type your input and press Enter"
+                        autoFocus
+                    />
+                </div>
             )}
+            {imageOutput && <Image src={imageOutput} alt="Generated plot" width={400} height={300} />}
+            
+            {!isLoading && !sessionHistory && !imageOutput && !isInteractive && (
+                <div className="flex h-full items-start justify-start text-muted-foreground">
+                Output will be displayed here.
+                </div>
+            )}
+            
           </div>
         </div>
       </main>
